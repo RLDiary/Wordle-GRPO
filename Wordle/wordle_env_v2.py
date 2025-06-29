@@ -166,10 +166,12 @@ class WordleEnv:
         
         agent_responses = self.generate_response(trajectories, llm, sampling_params)
 
+
         def update_task(j, agent_response):
             # Isolate the Agent Response
             
             agent_response_text = agent_response.outputs[0].text
+            print(j, agent_response_text)
             trajectory = copy.deepcopy(trajectories[j])
             trajectory.num_turns += 1
 
@@ -206,7 +208,7 @@ class WordleEnv:
             trajectory.messages.append({'role': 'assistant', 'content': agent_response_text})
             # Parse the Agent Response to extract the Guess
             # --- new extraction block --------------------------------------------
-            print(agent_response_text)
+
             _, guess = parser(agent_response_text)
             feedback = None
             if guess:
