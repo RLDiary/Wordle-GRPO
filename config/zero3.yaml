@@ -1,15 +1,20 @@
 compute_environment: LOCAL_MACHINE
-debug: false
+debug: true
 deepspeed_config:
-  zero3_init_flag: true
-  deepspeed_config_file: config/zero_stage3_offload_config.json
+  deepspeed_config_file: /root/Wordle-GRPO/config/zero_stage3_offload_config.json
+  zero3_init_flag: false
 distributed_type: DEEPSPEED
-fsdp_config: {}
+downcast_bf16: 'no'
+dynamo_config:
+  dynamo_backend: EAGER
+enable_cpu_affinity: false
 machine_rank: 0
-main_process_ip: null
-main_process_port: null
 main_training_function: main
-mixed_precision: fp16
 num_machines: 1
 num_processes: 2
+rdzv_backend: static
+same_network: true
+tpu_env: []
+tpu_use_cluster: false
+tpu_use_sudo: false
 use_cpu: false
