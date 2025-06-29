@@ -14,6 +14,8 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 import json
 from pathlib import Path
 from datasets import Dataset
+import nltk
+nltk.download('words')
 from nltk.corpus import words
 import enchant
 import re
@@ -88,6 +90,7 @@ class WordleRubric:
 
 class WordleEnv:
     def __init__(self):
+        self.max_workers = 2
         self.max_turns = 6
         self.games_won = 0
         self.games_played = 0
@@ -176,7 +179,7 @@ class WordleEnv:
             
             
             # Update Completion IDs and Completion Masks
-            total_prev_len = len(trajectory["prompt_ids"]) + len(trajectory["completion_ids"])
+            total_prev_len = len(trajectory.prompt_ids) + len(trajectory.completion_ids)
             env_response_len  = len(list(agent_response.prompt_token_ids)) - total_prev_len # type: ignore
             new_completion_len = len(agent_response.outputs[0].token_ids)
             
@@ -195,14 +198,15 @@ class WordleEnv:
             
             # Handling mismatch between completion_ids and completion_mask length; This is a hack, in theory
             # there should not be a mismatch between the two.
-            if len(task["completion_ids"]) > len(task["completion_mask"]): # type: ignore
-                task["completion_mask"].extend([1] * (len(task["completion_ids"]) - len(task["completion_mask"]))) # type: ignore
-            if len(task["completion_mask"]) > len(task["completion_ids"]): # type: ignore
-                task["completion_mask"] = task["completion_mask"][:len(task["completion_ids"])] # type: ignore
+            if len(trajectory.completion_ids) > len(trajectory.completion_mask): # type: ignore
+                trajectory.completion_mask.extend([1] * (len(trajectory.completion_ids) - len(trajectory.completion_mask))) # type: ignore
+            if len(trajectory.completion_mask) > len(trajectory.completion_ids): # type: ignore
+                trajectory.completion_mask = trajectory.completion_mask[:len(trajectory.completion_ids)] # type: ignore
 
             trajectory.messages.append({'role': 'assistant', 'content': agent_response_text})
             # Parse the Agent Response to extract the Guess
             # --- new extraction block --------------------------------------------
+            print(agent_response_text)
             _, guess = parser(agent_response_text)
             feedback = None
             if guess:
@@ -210,8 +214,9 @@ class WordleEnv:
                 trajectory.messages.append({'role': 'user', 'content': feedback})
             else:
                 trajectory.messages.append({'role': 'user', 'content': f'<think>Invalid format, stick to the <think>, </think> and <answer>, </answer> tags provided in the system prompt'})
+
             # ----------------------------------------------------------------------
-            if feedback.split('->')[-1].strip() == 'GGGGG':
+            if feedback is not None and feedback.split('->')[-1].strip() == 'GGGGG':
                 trajectory.solved = True
                 trajectory.messages[-1]['content'] = f'Success! You found the word {trajectory.word} in {trajectory.num_turns} turns.'
                 trajectory.game_completed = True
@@ -238,7 +243,7 @@ class WordleEnv:
         
         return trajectories
     
-    def solve(self, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams, training: bool = True):
+    def solve(self, tokenizer: Any, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams, training: bool = True):
         _ = words.words()
         custom_sp = sampling_params.clone()
         for k, v in self.sampling_args.items():
@@ -246,7 +251,7 @@ class WordleEnv:
         
         all_games_completed = False
         while not all_games_completed:
-            trajectories = self.play(trajectories, llm, custom_sp, training)
+            trajectories = self.play(tokenizer,trajectories, llm, custom_sp, training)
             all_games_completed = all(trajectory.game_completed for trajectory in trajectories)
 
         completion_messages = [t["trajectory"][2:] for t in trajectories]
