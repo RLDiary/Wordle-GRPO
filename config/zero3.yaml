@@ -1,7 +1,7 @@
 compute_environment: LOCAL_MACHINE
 debug: true
 deepspeed_config:
-  deepspeed_config_file: /root/Wordle-GRPO/config/zero_stage3_offload_config.json
+  deepspeed_config_file: /workspace/Wordle-GRPO/config/zero_stage3_offload_config.json
   zero3_init_flag: false
 distributed_type: DEEPSPEED
 downcast_bf16: 'no'
