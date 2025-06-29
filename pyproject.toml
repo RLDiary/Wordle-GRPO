@@ -9,33 +9,42 @@ dependencies = [
     "datasets>=3.6.0",
     "deepspeed>=0.17.1",
     "liger-kernel>=0.5.10",
+    "huggingface-hub>=0.33.0",
+    "jinja2>=3.1.6",
+    "liger-kernel>=0.5.10",
     "nltk>=3.9.1",
     "numpy==2.2",
+    "regex>=2024.11.6",
+    "scikit-learn>=1.7.0",
+    "scipy>=1.15.3",
     "peft>=0.15.2",
     "pyenchant>=3.2.2",
     "sentencepiece>=0.2.0",
     "setuptools>=79.0.1",
-    "transformers>=4.53.0",
-    "trl>=0.19.0",
+    "transformers==4.52.4",
+    "trl==0.19.0",
     "torch>=2.7.0",
     "torchvision>=0.22.0",
     "torchaudio>=2.7.0",
-    "vllm>=0.9.1"
+    "tqdm==4.67.1",
+    "vllm>=0.9.1",
+    "wandb>=0.20.1",
+    "xformers>=0.0.30"
 ]
 
 [tool.uv.sources]
 torch = [
-  { index = "pytorch-cu118", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
 torchvision = [
-  { index = "pytorch-cu118", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
 torchaudio = [
-  { index = "pytorch-cu118", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
 
 
 [[tool.uv.index]]
-name = "pytorch-cu118"
+name = "pytorch-cu124"
 url = "https://download.pytorch.org/whl/cu118"
 explicit = true
