@@ -2,7 +2,7 @@
 import Wordle as W
 
 def main():
-    model_name = '/home/ubuntu/TauBench/tau-bench/Model Tuning/Qwen2.5-0.5B'
+    model_name = 'Qwen/Qwen2.5-0.5B'
     run_name = 'Test'
     model, tokenizer = W.get_model_and_tokenizer(model_name)
     env = W.WordleEnv()
@@ -26,6 +26,14 @@ def main():
     rubric = W.WordleRubric()
     reward_funcs = rubric.get_reward_funcs()
     training_args.reward_weights = rubric.get_reward_weights()
+
+    training_args.generation_kwargs = {
+        "temperature": 0.0,
+        "top_p": 0.95,
+        "top_k": 40,
+        "repetition_penalty": 1.0,
+        "min_p": 0.0,
+    }
 
     trainer = W.GRPOMultiTurnTrainer(
         model=model,

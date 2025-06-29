@@ -307,7 +307,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
                     "top_k": -1 if self.top_k is None else self.top_k,
                     "min_p": 0.0 if self.min_p is None else self.min_p,
                     "max_tokens": self.max_completion_length,
-                    "guided_decoding": guided_decoding,
+                    # "guided_decoding": guided_decoding,
                 }
         if self.args.generation_kwargs is not None:
             generation_kwargs.update(self.args.generation_kwargs)
@@ -318,7 +318,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             self._last_loaded_step = self.state.global_step
         
         # Generate completions
-        trajectories = self.env.solve(Trajectories, self.llm, sampling_params, self.model.training)
+        trajectories = self.env.solve(self.processing_class, Trajectories, self.llm, sampling_params, self.model.training)
 
         completion_ids = [torch.tensor(trajectory.completion_ids, device=device) for trajectory in trajectories]
         completion_ids = pad(completion_ids, padding_value=self.processing_class.pad_token_id, padding_side='right')
