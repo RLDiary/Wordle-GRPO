@@ -10,7 +10,7 @@ dependencies = [
     "deepspeed>=0.17.1",
     "liger-kernel>=0.5.10",
     "nltk>=3.9.1",
-    "numpy>=2.3.1",
+    "numpy==2.2",
     "peft>=0.15.2",
     "pyenchant>=3.2.2",
     "sentencepiece>=0.2.0",
