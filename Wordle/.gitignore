@@ -5,6 +5,11 @@ build/
 dist/
 wheels/
 *.egg-info
+TauBench-GRPO-Code/
+.env
+roughnote.ipynb
+cheatsheet.md
+wordle_env.py
 
 # Virtual environments
 .venv
