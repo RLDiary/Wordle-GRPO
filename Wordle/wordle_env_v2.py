@@ -104,7 +104,6 @@ class WordleEnv:
         self.sampling_args = {
             "skip_special_tokens": False,
             "spaces_between_special_tokens": False,
-            "n": 1,
             "include_stop_str_in_output": False,
             "truncate_prompt_tokens": 8000,
         }   
@@ -185,7 +184,6 @@ class WordleEnv:
 
             if len(trajectory.prompt_ids) == 0:
                 trajectory.prompt_ids = list(agent_response.prompt_token_ids)
-            trajectory.messages.append({"role": "assistant", "content": agent_response_text})
             
             
             # Update Completion IDs and Completion Masks
@@ -223,7 +221,7 @@ class WordleEnv:
                 feedback = self.get_feedback(guess, trajectory.word)
                 trajectory.messages.append({'role': 'user', 'content': feedback})
             else:
-                trajectory.messages.append({'role': 'user', 'content': f'<think>Invalid format, stick to the <think>, </think> and <answer>, </answer> tags provided in the system prompt'})
+                trajectory.messages.append({'role': 'user', 'content': f'Invalid format, stick to the <think>, </think> and <answer>, </answer> tags provided in the system prompt'})
 
             # ----------------------------------------------------------------------
             if feedback is not None and feedback.split('->')[-1].strip() == 'GGGGG':
@@ -255,13 +253,16 @@ class WordleEnv:
         return trajectories
     
     def solve(self, tokenizer: Any, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams, training: bool = True):
+        from nltk.corpus import words
         _ = words.words()
+        
         custom_sp = sampling_params.clone()
         for k, v in self.sampling_args.items():
             setattr(custom_sp, k, v)
         
         all_games_completed = False
-        print('Now attempting to solve the wordle game')
+        words = [t.word for t in trajectories]
+        print(f'Now attempting to solve the wordle game with the words {words}')
         while not all_games_completed:
             trajectories = self.play(tokenizer,trajectories, llm, custom_sp, training)
             all_games_completed = all(trajectory.game_completed for trajectory in trajectories)
