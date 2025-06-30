@@ -327,10 +327,8 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         
         # Generate completions
         outputs = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training)
-        print('The output type is:', type(outputs))
 
         completion_messages = outputs["trajectory_sans_prompt"]
-        print('The completion messages are:', completion_messages)
 
         completion_ids = outputs["ids"]
         completion_ids = [torch.tensor(ids, device=device) for ids in completion_ids]
