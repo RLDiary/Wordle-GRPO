@@ -326,19 +326,19 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             self._last_loaded_step = self.state.global_step
         
         # Generate completions
-        trajectories = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training)
-        print('The output type is:', type(trajectories))
+        outputs = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training)
+        print('The output type is:', type(outputs))
 
-        completion_messages = trajectories["trajectory_sans_prompt"]
+        completion_messages = outputs["trajectory_sans_prompt"]
         print('The completion messages are:', completion_messages)
 
-        completion_ids = trajectories["ids"]
+        completion_ids = outputs["ids"]
         completion_ids = [torch.tensor(ids, device=device) for ids in completion_ids]
         completion_ids = pad(completion_ids, padding_value=self.processing_class.pad_token_id, padding_side='right') # type: ignore
         
         prompt_completion_ids = torch.cat([prompt_ids, completion_ids], dim=1)
         
-        completion_mask = trajectories['mask']
+        completion_mask = outputs['mask']
         completion_mask = [torch.tensor(mask, device=device) for mask in completion_mask]
         completion_mask = pad(completion_mask, padding_value=0, padding_side='right')
         
@@ -384,13 +384,15 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         rewards_per_func = torch.zeros(len(inputs), len(self.reward_funcs), device=device)
         # Compute Rewards for each Reward Function
         for i, reward_func in enumerate(self.reward_funcs):
-            output_reward_func = reward_func(trajectories=trajectories['trajectories'])
+            output_reward_func = reward_func(trajectories=outputs['trajectories'])
             rewards_per_func[:, i] = torch.tensor(output_reward_func, dtype=torch.float32, device=device)
         
 
         # Gather all rewards and Apply weights to each reward function's output and sum
         rewards_per_func = gather(rewards_per_func)
         rewards = (rewards_per_func * self.reward_weights.to(device).unsqueeze(0)).nansum(dim=1)
+        if self.accelerator.is_main_process:
+            print('The rewards are:', rewards)
         
 
         # Compute grouped-wise rewards
