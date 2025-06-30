@@ -112,11 +112,19 @@ class WordleEnv:
         self.d = broker.request_dict("en_US")
         self.local_dictionary = list(json.load(open('Wordle/data/English Words Dictionary.json')).keys())
         self.nltk_words = words.words()
-        self.system_prompt_template = self.jinja_env.get_template('system_prompt.txt')
+
+        
+        self.system_prompt_template = self.jinja_env.get_template('system_prompt2.txt')
         self.messages_template = [
                                     {'role': 'system', 'content': self.system_prompt_template.render()},
-                                    {'role': 'user', 'content': 'Your first guess is?'}
+                                    {'role': 'user', 'content': 'What is your first guess?'}
                                 ]
+        
+        # self.system_prompt_template = self.jinja_env.get_template('system_prompt.txt')
+        # self.messages_template = [
+        #                             {'role': 'system', 'content': self.system_prompt_template.render()},
+        #                             {'role': 'user', 'content': 'Your first guess is?'}
+        #                         ]
         
     
     def get_feedback(self, guess: str, word: str):
@@ -253,14 +261,15 @@ class WordleEnv:
             setattr(custom_sp, k, v)
         
         all_games_completed = False
+        print('Now attempting to solve the wordle game')
         while not all_games_completed:
             trajectories = self.play(tokenizer,trajectories, llm, custom_sp, training)
             all_games_completed = all(trajectory.game_completed for trajectory in trajectories)
 
-        completion_messages = [t["trajectory"][2:] for t in trajectories]
-        completion_ids = [t["completion_ids"] for t in trajectories]
-        completion_mask = [t["completion_mask"] for t in trajectories]
-        
+        completion_messages = [t.messages[2:] for t in trajectories]
+        completion_ids = [t.completion_ids for t in trajectories]
+        completion_mask = [t.completion_mask for t in trajectories]
+        print('Game completed.')
         output = {
             "ids": completion_ids,
             "trajectory_sans_prompt": completion_messages,

@@ -290,10 +290,18 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         
         device = self.accelerator.device
         mode = "train" if self.model.training else "eval"
+
+
+        all_words = [x['word'] for x in inputs]
+        print('Words in the device:', self.accelerator.device, 'are:', all_words)
         
-        Trajectories = [Trajectory(word = x["word"], word_hash = x["hash"], messages = copy.deepcopy(self.env.messages_template)) for x in inputs]
+        T = [Trajectory(word = x["word"], word_hash = x["hash"], messages = copy.deepcopy(self.env.messages_template)) for x in inputs]
         prompts_text = []
-        prompts_text.extend(maybe_apply_chat_template({"prompt": copy.deepcopy(self.env.messages_template)}, self.processing_class)["prompt"] * len(inputs))
+        prompts_text.append(maybe_apply_chat_template({"prompt": copy.deepcopy(self.env.messages_template)}, self.processing_class)["prompt"] * len(inputs))
+
+        print('The PROMPTS_TEXT is:', self.accelerator.device)
+        print(prompts_text)
+
         prompt_ids = self.processing_class(prompts_text, return_tensors="pt", padding=True, padding_side="left", add_special_tokens=False)
         prompt_input = Trainer._prepare_inputs(self, prompt_ids)
         prompt_ids, prompt_mask = prompt_input["input_ids"], prompt_input["attention_mask"]
@@ -318,9 +326,13 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             self._last_loaded_step = self.state.global_step
         
         # Generate completions
-        trajectories = self.env.solve(self.processing_class, Trajectories, self.llm, sampling_params, self.model.training)
+        trajectories = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training)
+        print('The output type is:', type(trajectories))
 
-        completion_ids = [torch.tensor(trajectory.completion_ids, device=device) for trajectory in trajectories]
+        completion_messages = [t["trajectory_sans_prompt"] for t in trajectories]
+        print('The completion messages are:', completion_messages)
+
+        completion_ids = [torch.tensor(t["ids"], device=device) for t in trajectories]
         completion_ids = pad(completion_ids, padding_value=self.processing_class.pad_token_id, padding_side='right')
         prompt_completion_ids = torch.cat([prompt_ids, completion_ids], dim=1)
         completion_mask = trajectories['mask']
@@ -366,7 +378,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         rewards_per_func = torch.zeros(len(inputs), len(self.reward_funcs), device=device)
         # Compute Rewards for each Reward Function
         for i, reward_func in enumerate(self.reward_funcs):
-            output_reward_func = reward_func(trajectories=trajectories)
+            output_reward_func = reward_func(trajectories=trajectories['trajectories'])
             rewards_per_func[:, i] = torch.tensor(output_reward_func, dtype=torch.float32, device=device)
         
 
