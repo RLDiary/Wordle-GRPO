@@ -72,12 +72,16 @@ class WordleRubric:
         """
         rewards = []
         for trajectory in trajectories:
-            if '<think>' not in trajectory.messages[-1]['content'] or '</think>' not in trajectory.messages[-1]['content']:
-                reward = self.penalty_score
-            elif '<answer>' not in trajectory.messages[-1]['content'] or '</answer>' not in trajectory.messages[-1]['content']:
-                reward = self.penalty_score
-            else:
-                reward = 0.0
+            reward = 0.0
+            for message in trajectory.messages:
+                if message['role'] == 'user':
+                    continue
+                if '<think>' not in message['content'] or '</think>' not in message['content']:
+                    reward = self.penalty_score
+                    break
+                elif '<answer>' not in message['content'] or '</answer>' not in message['content']:
+                    reward = self.penalty_score
+                    break
             rewards.append(reward)
         return rewards
 
