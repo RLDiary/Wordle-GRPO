@@ -29,7 +29,8 @@ dependencies = [
     "tqdm==4.67.1",
     "vllm>=0.9.1",
     "wandb>=0.20.1",
-    "xformers>=0.0.30"
+    "xformers>=0.0.30",
+    "flash-attn>=2.8.0"
 ]
 
 [tool.uv.sources]
@@ -48,3 +49,6 @@ torchaudio = [
 name = "pytorch-cu124"
 url = "https://download.pytorch.org/whl/cu118"
 explicit = true
+
+[tool.uv]
+no-build-isolation-package = ["flash-attn"]
