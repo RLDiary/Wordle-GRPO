@@ -329,13 +329,19 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         trajectories = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training)
         print('The output type is:', type(trajectories))
 
-        completion_messages = [t["trajectory_sans_prompt"] for t in trajectories]
+        completion_messages = trajectories["trajectory_sans_prompt"]
         print('The completion messages are:', completion_messages)
 
-        completion_ids = [torch.tensor(t["ids"], device=device) for t in trajectories]
-        completion_ids = pad(completion_ids, padding_value=self.processing_class.pad_token_id, padding_side='right')
+        completion_ids = trajectories["ids"]
+        completion_ids = [torch.tensor(ids, device=device) for ids in completion_ids]
+        completion_ids = pad(completion_ids, padding_value=self.processing_class.pad_token_id, padding_side='right') # type: ignore
+        
         prompt_completion_ids = torch.cat([prompt_ids, completion_ids], dim=1)
+        
         completion_mask = trajectories['mask']
+        completion_mask = [torch.tensor(mask, device=device) for mask in completion_mask]
+        completion_mask = pad(completion_mask, padding_value=0, padding_side='right')
+        
         prompt_completion_ids = torch.cat([prompt_ids, completion_ids], dim=1)
         attention_mask = torch.cat([prompt_mask, completion_mask], dim=1) # (B, P+C)
 
