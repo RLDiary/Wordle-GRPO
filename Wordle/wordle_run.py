@@ -13,14 +13,13 @@ def main():
     training_args.report_to = 'none'
     training_args.use_vllm = True
     training_args.num_iterations=1
-    training_args.per_device_train_batch_size=3
     training_args.num_generations=12
     training_args.max_prompt_length=1024
     training_args.max_completion_length=4096
     training_args.max_steps=100
     training_args.vllm_mode = 'colocate'
-    training_args.vllm_gpu_memory_utilization = 0.3
-    training_args.vllm_tensor_parallel_size = 2
+    training_args.vllm_gpu_memory_utilization = 0.5
+    training_args.vllm_tensor_parallel_size = 1
     training_args.per_device_train_batch_size = 1
     training_args.per_device_eval_batch_size = 1
     training_args.use_liger_loss = True

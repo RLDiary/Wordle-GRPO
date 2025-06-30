@@ -31,6 +31,7 @@ dependencies = [
     "wandb>=0.20.1",
     "xformers>=0.0.30",
     "flash-attn>=2.8.0",
+    "flashinfer-python>=0.2.6.post1",
 ]
 
 [tool.uv.sources]
