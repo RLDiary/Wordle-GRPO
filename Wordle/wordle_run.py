@@ -2,7 +2,7 @@
 import Wordle as W
 
 def main():
-    model_name = 'Qwen/Qwen2.5-7B'
+    model_name = '/workspace/Models/Qwen2.5-7B'
     run_name = 'Test'
     model, tokenizer = W.get_model_and_tokenizer(model_name)
     env = W.WordleEnv()
@@ -18,7 +18,7 @@ def main():
     training_args.max_completion_length=4096
     training_args.max_steps=100
     training_args.vllm_mode = 'colocate'
-    training_args.vllm_gpu_memory_utilization = 0.5
+    training_args.vllm_gpu_memory_utilization = 0.7
     training_args.vllm_tensor_parallel_size = 1
     training_args.per_device_train_batch_size = 1
     training_args.per_device_eval_batch_size = 1
