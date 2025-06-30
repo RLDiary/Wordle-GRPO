@@ -1,0 +1,5 @@
+[default]
+entity = vignesh-personal
+project = Wordle-Qwen2.5-7B
+base_url = https://api.wandb.ai
+
