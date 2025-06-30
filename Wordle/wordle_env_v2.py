@@ -232,7 +232,8 @@ class WordleEnv:
                 final_completion_ids = tokenizer(final_str, return_tensors=None, add_special_tokens=False)["input_ids"]
                 trajectory.completion_ids.extend(final_completion_ids)
                 trajectory.completion_mask.extend([self.env_mask] * len(final_completion_ids))
-                return j, trajectory
+            
+            return j, trajectory
         
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             results = list(executor.map(

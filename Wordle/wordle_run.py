@@ -2,7 +2,7 @@
 import Wordle as W
 
 def main():
-    model_name = 'Qwen/Qwen2.5-0.5B'
+    model_name = 'Qwen/Qwen2.5-3B'
     run_name = 'Test'
     model, tokenizer = W.get_model_and_tokenizer(model_name)
     env = W.WordleEnv()
