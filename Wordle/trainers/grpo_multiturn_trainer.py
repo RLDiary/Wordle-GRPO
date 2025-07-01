@@ -297,12 +297,10 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         
         T = [Trajectory(word = x["word"], word_hash = x["hash"], messages = copy.deepcopy(self.env.messages_template)) for x in inputs]
         prompts_text = [maybe_apply_chat_template({"prompt": copy.deepcopy(self.env.messages_template)}, self.processing_class)["prompt"] for _ in range(len(inputs))]
-        print('The length of the prompts_text is:', len(prompts_text), self.accelerator.device)
 
         prompt_ids = self.processing_class(prompts_text, return_tensors="pt", padding=True, padding_side="left", add_special_tokens=False)
         prompt_input = Trainer._prepare_inputs(self, prompt_ids)
         prompt_ids, prompt_mask = prompt_input["input_ids"], prompt_input["attention_mask"]
-        print('The shape of prompt_ids and prompt_mask are:', prompt_ids.shape, prompt_mask.shape, self.accelerator.device)
 
         guided_decoding = False
         generation_kwargs = {
@@ -340,7 +338,6 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         completion_mask = [torch.tensor(mask, device=device) for mask in completion_mask]
         completion_mask = pad(completion_mask, padding_value=0, padding_side='right')
         
-        print('The shape of completion ids and completion mask are:', completion_ids.shape, completion_mask.shape, self.accelerator.device)
         prompt_completion_ids = torch.cat([prompt_ids, completion_ids], dim=1)
         attention_mask = torch.cat([prompt_mask, completion_mask], dim=1) # (B, P+C)
 
@@ -442,6 +439,8 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         for i, name in enumerate(self.reward_func_names):
             self._textual_logs["rewards"][name].extend(rewards_per_func[:, i].tolist())
         self._textual_logs["advantages"].extend(all_process_advantages.tolist())
+
+        self.accelerator.wait_for_everyone()
 
         return {
             "prompt_ids": prompt_ids,

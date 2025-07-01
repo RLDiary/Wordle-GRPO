@@ -12,7 +12,6 @@ def grpo_defaults(run_name: str) -> GRPOConfig:
         lr_scheduler_type="constant_with_warmup",
         warmup_steps=10,
         num_train_epochs=1,
-        max_steps=500,
         max_grad_norm=2.0,
         gradient_checkpointing=True,
         save_strategy="steps",
@@ -21,7 +20,6 @@ def grpo_defaults(run_name: str) -> GRPOConfig:
         logging_steps=1,
         log_on_each_node=False,
         log_completions=True,
-        report_to="wandb",
     )
 
 def lora_defaults(r = 8, alpha = 16) -> LoraConfig:
