@@ -22,6 +22,7 @@ def main():
     training_args.vllm_gpu_memory_utilization = 0.5
     training_args.vllm_tensor_parallel_size = 1
     training_args.per_device_train_batch_size = 2
+    training_args.generation_batch_size = 4
     training_args.per_device_eval_batch_size = 2
     training_args.use_liger_loss = True
     training_args.bf16_full_eval = False
