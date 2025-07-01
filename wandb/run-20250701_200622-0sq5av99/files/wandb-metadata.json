@@ -1,0 +1,50 @@
+{
+  "os": "Linux-6.8.0-52-generic-x86_64-with-glibc2.35",
+  "python": "CPython 3.12.7",
+  "startedAt": "2025-07-01T20:06:23.559838Z",
+  "program": "/workspace/Wordle-GRPO/Wordle/wordle_run.py",
+  "codePath": "Wordle/wordle_run.py",
+  "git": {
+    "remote": "git@github.com:everyfin-in/Wordle-GRPO.git",
+    "commit": "499ed5afd94c2a172eb0590df2144af3e1df69ef"
+  },
+  "email": "vigneshbabu.ram@gmail.com",
+  "root": "/workspace/Wordle-GRPO",
+  "host": "e96d18ed24db",
+  "executable": "/workspace/Wordle-GRPO/.venv/bin/python3",
+  "codePathLocal": "Wordle/wordle_run.py",
+  "cpu_count": 64,
+  "cpu_count_logical": 128,
+  "gpu": "NVIDIA RTX A5000",
+  "gpu_count": 2,
+  "disk": {
+    "/": {
+      "total": "32212254720",
+      "used": "24246157312"
+    }
+  },
+  "memory": {
+    "total": "540656545792"
+  },
+  "cpu": {
+    "count": 64,
+    "countLogical": 128
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA RTX A5000",
+      "memoryTotal": "25757220864",
+      "cudaCores": 8192,
+      "architecture": "Ampere",
+      "uuid": "GPU-e0d62f8e-c820-7593-8e33-cccf00b1bd06"
+    },
+    {
+      "name": "NVIDIA RTX A5000",
+      "memoryTotal": "25757220864",
+      "cudaCores": 8192,
+      "architecture": "Ampere",
+      "uuid": "GPU-116c800a-52b7-cca5-e6c4-d7a3ec06247b"
+    }
+  ],
+  "cudaVersion": "12.8"
+}

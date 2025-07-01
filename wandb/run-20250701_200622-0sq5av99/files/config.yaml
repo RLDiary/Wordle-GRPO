@@ -1,0 +1,548 @@
+_name_or_path:
+    value: /workspace/Models/Qwen2.5-3B-Instruct
+_wandb:
+    value:
+        cli_version: 0.20.1
+        m:
+            - "1": train/global_step
+              "6":
+                - 3
+              "7": []
+            - "1": 'profiling/Time taken: GRPOMultiTurnTrainer._move_model_to_vllm'
+              "5": 1
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": 'profiling/Time taken: GRPOMultiTurnTrainer.Solve Game'
+              "5": 1
+              "6":
+                - 1
+                - 3
+              "7": []
+        python_version: 3.12.7
+        t:
+            "1":
+                - 1
+                - 5
+                - 11
+                - 30
+                - 41
+                - 49
+                - 51
+                - 53
+                - 71
+                - 84
+                - 95
+                - 98
+            "2":
+                - 1
+                - 5
+                - 11
+                - 30
+                - 41
+                - 49
+                - 51
+                - 53
+                - 71
+                - 84
+                - 95
+                - 98
+            "3":
+                - 7
+                - 13
+                - 19
+                - 55
+                - 66
+            "4": 3.12.7
+            "5": 0.20.1
+            "6": 4.52.4
+            "9":
+                "1": transformers_trainer
+            "12": 0.20.1
+            "13": linux-x86_64
+accelerator_config:
+    value:
+        dispatch_batches: null
+        even_batches: true
+        gradient_accumulation_kwargs: null
+        non_blocking: false
+        split_batches: false
+        use_seedable_sampler: true
+adafactor:
+    value: false
+adam_beta1:
+    value: 0.9
+adam_beta2:
+    value: 0.999
+adam_epsilon:
+    value: 1e-08
+add_cross_attention:
+    value: false
+architectures:
+    value:
+        - Qwen2ForCausalLM
+async_generation_timeout:
+    value: 300
+async_max_queue_size:
+    value: null
+attention_dropout:
+    value: 0
+auto_find_batch_size:
+    value: false
+average_tokens_across_devices:
+    value: false
+bad_words_ids:
+    value: null
+batch_eval_metrics:
+    value: false
+begin_suppress_tokens:
+    value: null
+beta:
+    value: 0
+bf16:
+    value: true
+bf16_full_eval:
+    value: true
+bos_token_id:
+    value: 151643
+chunk_size_feed_forward:
+    value: 0
+cross_attention_hidden_size:
+    value: null
+data_seed:
+    value: null
+dataloader_drop_last:
+    value: false
+dataloader_num_workers:
+    value: 0
+dataloader_persistent_workers:
+    value: false
+dataloader_pin_memory:
+    value: true
+dataloader_prefetch_factor:
+    value: null
+ddp_backend:
+    value: null
+ddp_broadcast_buffers:
+    value: null
+ddp_bucket_cap_mb:
+    value: null
+ddp_find_unused_parameters:
+    value: null
+ddp_timeout:
+    value: 1800
+debug:
+    value: []
+decoder_start_token_id:
+    value: null
+deepspeed:
+    value: null
+delta:
+    value: null
+disable_dropout:
+    value: false
+disable_tqdm:
+    value: false
+diversity_penalty:
+    value: 0
+do_eval:
+    value: false
+do_predict:
+    value: false
+do_sample:
+    value: false
+do_train:
+    value: false
+ds3_gather_for_generation:
+    value: true
+early_stopping:
+    value: false
+encoder_no_repeat_ngram_size:
+    value: 0
+eos_token_id:
+    value: 151645
+epsilon:
+    value: 0.2
+epsilon_high:
+    value: null
+eval_accumulation_steps:
+    value: null
+eval_delay:
+    value: 0
+eval_do_concat_batches:
+    value: true
+eval_on_start:
+    value: false
+eval_steps:
+    value: null
+eval_strategy:
+    value: "no"
+eval_use_gather_object:
+    value: false
+exponential_decay_length_penalty:
+    value: null
+finetuning_task:
+    value: null
+forced_bos_token_id:
+    value: null
+forced_eos_token_id:
+    value: null
+fp16:
+    value: false
+fp16_backend:
+    value: auto
+fp16_full_eval:
+    value: false
+fp16_opt_level:
+    value: O1
+frequency_penalty:
+    value: 0
+fsdp:
+    value: []
+fsdp_config:
+    value:
+        min_num_params: 0
+        xla: false
+        xla_fsdp_grad_ckpt: false
+        xla_fsdp_v2: false
+fsdp_min_num_params:
+    value: 0
+fsdp_transformer_layer_cls_to_wrap:
+    value: null
+full_determinism:
+    value: false
+generation_batch_size:
+    value: 16
+gradient_accumulation_steps:
+    value: 1
+gradient_checkpointing:
+    value: true
+gradient_checkpointing_kwargs:
+    value: null
+greater_is_better:
+    value: null
+group_by_length:
+    value: false
+half_precision_backend:
+    value: auto
+hidden_act:
+    value: silu
+hidden_size:
+    value: 2048
+hub_always_push:
+    value: false
+hub_model_id:
+    value: null
+hub_private_repo:
+    value: null
+hub_strategy:
+    value: every_save
+hub_token:
+    value: <HUB_TOKEN>
+id2label:
+    value:
+        "0": LABEL_0
+        "1": LABEL_1
+ignore_data_skip:
+    value: false
+include_for_metrics:
+    value: []
+include_inputs_for_metrics:
+    value: false
+include_num_input_tokens_seen:
+    value: false
+include_tokens_per_second:
+    value: false
+initializer_range:
+    value: 0.02
+intermediate_size:
+    value: 11008
+is_decoder:
+    value: false
+is_encoder_decoder:
+    value: false
+jit_mode_eval:
+    value: false
+label_names:
+    value: null
+label_smoothing_factor:
+    value: 0
+label2id:
+    value:
+        LABEL_0: 0
+        LABEL_1: 1
+learning_rate:
+    value: 1e-06
+length_column_name:
+    value: length
+length_penalty:
+    value: 1
+load_best_model_at_end:
+    value: false
+local_rank:
+    value: 0
+log_completions:
+    value: true
+log_level:
+    value: passive
+log_level_replica:
+    value: warning
+log_on_each_node:
+    value: false
+logging_dir:
+    value: outputs/Test/runs/Jul01_20-03-48_e96d18ed24db
+logging_first_step:
+    value: false
+logging_nan_inf_filter:
+    value: true
+logging_steps:
+    value: 1
+logging_strategy:
+    value: steps
+loss_type:
+    value: bnpo
+lr_scheduler_type:
+    value: constant_with_warmup
+mask_env_responses:
+    value: false
+mask_truncated_completions:
+    value: false
+max_completion_length:
+    value: 4096
+max_concurrent:
+    value: 1024
+max_grad_norm:
+    value: 2
+max_length:
+    value: 20
+max_num_processes:
+    value: 8
+max_position_embeddings:
+    value: 32768
+max_prompt_length:
+    value: 4096
+max_steps:
+    value: 100
+max_window_layers:
+    value: 70
+metric_for_best_model:
+    value: null
+min_length:
+    value: 0
+min_p:
+    value: null
+model/num_parameters:
+    value: 0
+model_init_kwargs:
+    value: null
+model_type:
+    value: qwen2
+mp_parameters:
+    value: ""
+neftune_noise_alpha:
+    value: null
+no_cuda:
+    value: false
+no_repeat_ngram_size:
+    value: 0
+num_attention_heads:
+    value: 16
+num_batches_ahead:
+    value: 1
+num_beam_groups:
+    value: 1
+num_beams:
+    value: 1
+num_completions_to_print:
+    value: null
+num_generations:
+    value: 16
+num_hidden_layers:
+    value: 36
+num_iterations:
+    value: 2
+num_key_value_heads:
+    value: 2
+num_return_sequences:
+    value: 1
+num_train_epochs:
+    value: 1
+optim:
+    value: adamw_torch
+optim_args:
+    value: null
+optim_target_modules:
+    value: null
+output_attentions:
+    value: false
+output_dir:
+    value: outputs/Test
+output_hidden_states:
+    value: false
+output_scores:
+    value: false
+overwrite_output_dir:
+    value: false
+pad_token_id:
+    value: null
+past_index:
+    value: -1
+per_device_eval_batch_size:
+    value: 8
+per_device_train_batch_size:
+    value: 8
+per_gpu_eval_batch_size:
+    value: null
+per_gpu_train_batch_size:
+    value: null
+prediction_loss_only:
+    value: false
+prefix:
+    value: null
+presence_penalty:
+    value: 0
+problem_type:
+    value: null
+push_to_hub:
+    value: false
+push_to_hub_model_id:
+    value: null
+push_to_hub_organization:
+    value: null
+push_to_hub_token:
+    value: <PUSH_TO_HUB_TOKEN>
+ray_scope:
+    value: last
+ref_model_mixup_alpha:
+    value: 0.5
+ref_model_sync_steps:
+    value: 100
+remove_invalid_values:
+    value: false
+remove_unused_columns:
+    value: false
+repetition_penalty:
+    value: 1
+report_to:
+    value: wandb
+restore_callback_states_from_checkpoint:
+    value: false
+resume_from_checkpoint:
+    value: null
+return_dict:
+    value: true
+return_dict_in_generate:
+    value: false
+rms_norm_eps:
+    value: 1e-06
+rope_scaling:
+    value: null
+rope_theta:
+    value: 1e+06
+run_name:
+    value: Test
+save_on_each_node:
+    value: false
+save_only_model:
+    value: true
+save_safetensors:
+    value: true
+save_steps:
+    value: 500
+save_strategy:
+    value: steps
+save_total_limit:
+    value: null
+scale_rewards:
+    value: true
+seed:
+    value: 42
+sep_token_id:
+    value: null
+shuffle_dataset:
+    value: true
+skip_memory_metrics:
+    value: true
+sliding_window:
+    value: 32768
+steps_per_generation:
+    value: 1
+suppress_tokens:
+    value: null
+sync_ref_model:
+    value: true
+task_specific_params:
+    value: null
+temperature:
+    value: 1
+tf_legacy_loss:
+    value: false
+tf32:
+    value: null
+tie_encoder_decoder:
+    value: false
+tie_word_embeddings:
+    value: true
+tokenizer_class:
+    value: null
+top_k:
+    value: null
+top_p:
+    value: 1
+torch_compile:
+    value: false
+torch_compile_backend:
+    value: null
+torch_compile_mode:
+    value: null
+torch_dtype:
+    value: bfloat16
+torch_empty_cache_steps:
+    value: null
+torchdynamo:
+    value: null
+torchscript:
+    value: false
+tpu_metrics_debug:
+    value: false
+tpu_num_cores:
+    value: null
+transformers_version:
+    value: 4.52.4
+typical_p:
+    value: 1
+use_bfloat16:
+    value: false
+use_cache:
+    value: false
+use_cpu:
+    value: false
+use_ipex:
+    value: false
+use_legacy_prediction_loop:
+    value: false
+use_liger_kernel:
+    value: false
+use_mps_device:
+    value: false
+use_sliding_window:
+    value: false
+vllm_guided_decoding_regex:
+    value: null
+vllm_server_host:
+    value: 0.0.0.0
+vllm_server_port:
+    value: 8000
+vllm_server_timeout:
+    value: 300
+vocab_size:
+    value: 151936
+wandb_log_unique_prompts:
+    value: false
+warmup_ratio:
+    value: 0
+warmup_steps:
+    value: 10
+weight_decay:
+    value: 0

@@ -5,6 +5,13 @@ from accelerate.utils import broadcast_object_list
 
 accelerator = Accelerator()
 
+import os
+os.environ["WANDB_PROJECT"] = "Wordle-GRPO"
+
+import datetime
+date = datetime.datetime.now().strftime("%d-%m")
+time = datetime.datetime.now().strftime("%H-%M")
+
 def shared_dataset(env, split: str, n_games: int):
     """
     • Rank-0 samples the games           (any RNG is confined to that process)
@@ -21,7 +28,7 @@ def shared_dataset(env, split: str, n_games: int):
 
 def main():
     model_name = '/workspace/Models/Qwen2.5-3B-Instruct'
-    run_name = 'Test'
+    run_name = f'Initial-A5000-TestRuns-{date}-{time}'
     model, tokenizer = W.get_model_and_tokenizer(model_name)
     env = W.WordleEnv()
 
@@ -34,17 +41,19 @@ def main():
     training_args.beta = 0.0
     training_args.use_vllm = True
     training_args.num_iterations=2
-    training_args.num_generations=16
+    training_args.num_generations=8
     training_args.max_prompt_length=4096
     training_args.max_completion_length=4096
     training_args.max_steps=100
     training_args.vllm_mode = 'colocate'
-    training_args.vllm_gpu_memory_utilization = 0.5
+    training_args.vllm_gpu_memory_utilization = 0.4
     training_args.vllm_tensor_parallel_size = 1
-    training_args.per_device_train_batch_size = 8
+    training_args.per_device_train_batch_size = 4
     training_args.steps_per_generation = 1
-    training_args.per_device_eval_batch_size = 8
+    training_args.per_device_eval_batch_size = 4
     training_args.use_liger_loss = True
+    training_args.bf16_full_eval = True
+    training_args.bf16 = True
     
     
     training_args.report_to = 'wandb'

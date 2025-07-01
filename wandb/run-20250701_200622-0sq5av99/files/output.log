@@ -1,0 +1,150 @@
+  0%|                                                                                       | 0/100 [00:00<?, ?it/s]/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/utils/checkpoint.py:86: UserWarning: None of the inputs have requires_grad=True. Gradients will be None
+Words in the device: cuda:0 are: ['paler', 'paler', 'paler', 'paler', 'paler', 'paler', 'paler', 'paler']
+The length of the prompts_text is: 8 cuda:0
+The shape of prompt_ids and prompt_mask are: torch.Size([8, 475]) torch.Size([8, 475]) cuda:0
+INFO 07-01 20:06:26 [block_pool.py:316] Successfully reset prefix cache
+Now attempting to solve the wordle game with the words ['paler', 'paler', 'paler', 'paler', 'paler', 'paler', 'paler', 'paler']
+INFO 07-01 20:06:26 [chat_utils.py:420] Detected the chat template content format to be 'string'. You can set `--chat-template-content-format` to override this.
+Game completed.
+The shape of completion ids and completion mask are: torch.Size([8, 5374]) torch.Size([8, 5374]) cuda:0
+  warnings.warn(
+/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/utils/checkpoint.py:86: UserWarning: None of the inputs have requires_grad=True. Gradients will be None
+  warnings.warn(
+Traceback (most recent call last):
+  File "/workspace/Wordle-GRPO/Wordle/wordle_run.py", line 84, in <module>
+    main()
+  File "/workspace/Wordle-GRPO/Wordle/wordle_run.py", line 79, in main
+    trainer.train()
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 2240, in train
+    return inner_training_loop(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 2555, in _inner_training_loop
+    tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 3739, in training_step
+    inputs = self._prepare_inputs(inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/trl/extras/profiling.py", line 98, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/trl/trainer/grpo_trainer.py", line 989, in _prepare_inputs
+    generation_batch = self._generate_and_score_completions(generation_batch)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/Wordle/trainers/grpo_multiturn_trainer.py", line 358, in _generate_and_score_completions
+    old_per_token_logps = self._get_per_token_logps(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/trl/extras/profiling.py", line 98, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/trl/trainer/grpo_trainer.py", line 864, in _get_per_token_logps
+    logits = model(
+             ^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1857, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1805, in inner
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/liger_kernel/transformers/model/qwen2.py", line 213, in lce_forward
+    logits = self.lm_head(kept_hidden_states)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1857, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1805, in inner
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/deepspeed/runtime/zero/linear.py", line 116, in zero3_linear_wrap
+    return LinearFunctionForZeroStage3.apply(input, weight)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 575, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/amp/autocast_mode.py", line 510, in decorate_fwd
+    return fwd(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/deepspeed/runtime/zero/linear.py", line 64, in forward
+    output = input.matmul(weight.t())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 12.17 GiB. GPU 0 has a total capacity of 23.57 GiB of which 9.86 GiB is free. Process 2251308 has 13.69 GiB memory in use. Of the allocated memory 12.48 GiB is allocated by PyTorch, with 65.88 MiB allocated in private pools (e.g., CUDA Graphs), and 392.79 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/workspace/Wordle-GRPO/Wordle/wordle_run.py", line 84, in <module>
+[rank0]:     main()
+[rank0]:   File "/workspace/Wordle-GRPO/Wordle/wordle_run.py", line 79, in main
+[rank0]:     trainer.train()
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 2240, in train
+[rank0]:     return inner_training_loop(
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 2555, in _inner_training_loop
+[rank0]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+[rank0]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/transformers/trainer.py", line 3739, in training_step
+[rank0]:     inputs = self._prepare_inputs(inputs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/trl/extras/profiling.py", line 98, in wrapper
+[rank0]:     return func(self, *args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/trl/trainer/grpo_trainer.py", line 989, in _prepare_inputs
+[rank0]:     generation_batch = self._generate_and_score_completions(generation_batch)
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/Wordle/trainers/grpo_multiturn_trainer.py", line 358, in _generate_and_score_completions
+[rank0]:     old_per_token_logps = self._get_per_token_logps(
+[rank0]:                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/trl/extras/profiling.py", line 98, in wrapper
+[rank0]:     return func(self, *args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/trl/trainer/grpo_trainer.py", line 864, in _get_per_token_logps
+[rank0]:     logits = model(
+[rank0]:              ^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1857, in _call_impl
+[rank0]:     return inner()
+[rank0]:            ^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1805, in inner
+[rank0]:     result = forward_call(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/liger_kernel/transformers/model/qwen2.py", line 213, in lce_forward
+[rank0]:     logits = self.lm_head(kept_hidden_states)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1857, in _call_impl
+[rank0]:     return inner()
+[rank0]:            ^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1805, in inner
+[rank0]:     result = forward_call(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 125, in forward
+[rank0]:     return F.linear(input, self.weight, self.bias)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/deepspeed/runtime/zero/linear.py", line 116, in zero3_linear_wrap
+[rank0]:     return LinearFunctionForZeroStage3.apply(input, weight)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 575, in apply
+[rank0]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/torch/amp/autocast_mode.py", line 510, in decorate_fwd
+[rank0]:     return fwd(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/Wordle-GRPO/.venv/lib/python3.12/site-packages/deepspeed/runtime/zero/linear.py", line 64, in forward
+[rank0]:     output = input.matmul(weight.t())
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 12.17 GiB. GPU 0 has a total capacity of 23.57 GiB of which 9.86 GiB is free. Process 2251308 has 13.69 GiB memory in use. Of the allocated memory 12.48 GiB is allocated by PyTorch, with 65.88 MiB allocated in private pools (e.g., CUDA Graphs), and 392.79 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
