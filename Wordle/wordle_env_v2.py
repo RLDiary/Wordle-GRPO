@@ -31,6 +31,9 @@ def hash_word(s: str, bits=16):
 def parser(text):
     reasoning = re.search(r"<think>(.*?)</think>", text, re.DOTALL)
     guess = re.search(r"<answer>(.*?)</answer>", text, re.DOTALL)
+
+    if not guess:
+        guess = re.search(r"answer: (.*)", text, re.DOTALL)
     
     if reasoning and guess:
         return reasoning.group(1).strip(), guess.group(1).strip()
@@ -232,12 +235,14 @@ class WordleEnv:
                 trajectory.messages[-1]['content'] = f'Success! You found the word {trajectory.word} in {trajectory.num_turns} turns.'
                 trajectory.game_completed = True
                 
+
+                
             if trajectory.num_turns == self.max_turns:
                 trajectory.game_completed = True
                     
             # This is specific to Qwen2.5 Format
             if trajectory.game_completed:
-                final_str = f"<|im_start|>user\nSuccess! You found the word {trajectory.word} in {trajectory.num_turns} turns.<|im_end|>\n"
+                final_str = f"<|im_start|>user\n{trajectory.messages[-1]['content']}<|im_end|>\n"
                 final_completion_ids = tokenizer(final_str, return_tensors=None, add_special_tokens=False)["input_ids"]
                 trajectory.completion_ids.extend(final_completion_ids)
                 trajectory.completion_mask.extend([self.env_mask] * len(final_completion_ids))
