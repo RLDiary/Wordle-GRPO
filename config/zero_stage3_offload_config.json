@@ -1,6 +1,6 @@
 {
     "bf16": {
-        "enabled": false
+        "enabled": true
     },
     "optimizer": {
         "type": "AdamW",
