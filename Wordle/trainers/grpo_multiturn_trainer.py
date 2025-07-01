@@ -21,7 +21,7 @@ from trl import GRPOTrainer, GRPOConfig
 from trl.data_utils import maybe_apply_chat_template
 
 from trl.trainer.utils import pad
-from trl.extras.profiling import profiling_decorator
+from trl.extras.profiling import profiling_decorator, profiling_context
 import copy
 from Wordle import WordleEnv, Word, Trajectory
 
@@ -324,7 +324,9 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             self._last_loaded_step = self.state.global_step
         
         # Generate completions
-        outputs = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training)
+        with profiling_context(self, "Solve Game"):
+            outputs = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training)
+            self.accelerator.wait_for_everyone()
 
         completion_messages = outputs["trajectory_sans_prompt"]
 
