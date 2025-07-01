@@ -29,41 +29,62 @@ def shared_dataset(env, split: str, n_games: int):
 def main():
     model_name = '/workspace/Models/Qwen2.5-3B-Instruct'
     run_name = f'Initial-A5000-TestRuns-{date}-{time}'
+    
     model, tokenizer = W.get_model_and_tokenizer(model_name)
+    
+    # Initialize Environment and Get Dataset
     env = W.WordleEnv()
-
     train_dataset = shared_dataset(env, 'all', 100)
     eval_dataset = shared_dataset(env, 'all', 100)
     accelerator.wait_for_everyone()
 
+    # Initialize Training Arguments
     training_args = W.grpo_defaults(run_name=run_name)
 
+    # Beta and KL Divergence
     training_args.beta = 0.0
-    training_args.use_vllm = True
+    training_args.sync_ref_model = False
+    training_args.ref_model_mixup_alpha = 0.0
+    
+    # Training Config
     training_args.num_iterations=2
     training_args.num_generations=8
-    training_args.max_prompt_length=4096
-    training_args.max_completion_length=4096
-    training_args.max_steps=100
-    training_args.vllm_mode = 'colocate'
-    training_args.vllm_gpu_memory_utilization = 0.4
-    training_args.vllm_tensor_parallel_size = 1
+
+    # Batch Size Parameters
     training_args.per_device_train_batch_size = 4
     training_args.steps_per_generation = 1
     training_args.per_device_eval_batch_size = 4
+    
+    # Max Length Parameters
+    training_args.max_prompt_length=4096
+    training_args.max_completion_length=4096
+    
+    training_args.max_steps=100
+
+    # VLLM Config
+    training_args.use_vllm = True
+    training_args.vllm_mode = 'colocate'
+    training_args.vllm_gpu_memory_utilization = 0.4
+    training_args.vllm_tensor_parallel_size = 1
+    
+    # Loss Config
+    training_args.loss_type = 'bnpo'
+    training_args.scale_rewards = False
     training_args.use_liger_loss = True
     training_args.bf16_full_eval = True
     training_args.bf16 = True
     
-    
+    # Wandb Config
     training_args.report_to = 'wandb'
     training_args.logging_steps = 1
     training_args.run_name = run_name
     
+    # Reward Config
     rubric = W.WordleRubric()
     reward_funcs = rubric.get_reward_funcs()
     training_args.reward_weights = rubric.get_reward_weights()
 
+    # Generation Config
     training_args.generation_kwargs = {
         "temperature": 1.0,
         "repetition_penalty": 1.0,
