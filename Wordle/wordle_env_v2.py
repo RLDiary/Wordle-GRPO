@@ -165,7 +165,6 @@ class WordleEnv:
 
     def generate_response(self, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams):
         messages = [trajectory.messages for trajectory in trajectories]
-        print('Running Inference with Messages: ', messages)
         agent_responses = llm.chat(messages, sampling_params=sampling_params, use_tqdm=False)
         return agent_responses
 
@@ -263,8 +262,6 @@ class WordleEnv:
         custom_sp = sampling_params.clone()
         for k, v in self.sampling_args.items():
             setattr(custom_sp, k, v)
-        
-        print('Sampling Params: ', custom_sp)
         
         all_games_completed = False
         words = [t.word for t in trajectories]
