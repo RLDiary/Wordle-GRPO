@@ -108,8 +108,7 @@ class WordleEnv:
         self.sampling_args = {
             "skip_special_tokens": False,
             "spaces_between_special_tokens": False,
-            "include_stop_str_in_output": False,
-            "truncate_prompt_tokens": 8000,
+            "include_stop_str_in_output": False
         }   
         broker = enchant.Broker()
         self.d = broker.request_dict("en_US")
@@ -166,6 +165,7 @@ class WordleEnv:
 
     def generate_response(self, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams):
         messages = [trajectory.messages for trajectory in trajectories]
+        print('Running Inference with Messages: ', messages)
         agent_responses = llm.chat(messages, sampling_params=sampling_params, use_tqdm=False)
         return agent_responses
 
@@ -264,11 +264,13 @@ class WordleEnv:
         for k, v in self.sampling_args.items():
             setattr(custom_sp, k, v)
         
+        print('Sampling Params: ', custom_sp)
+        
         all_games_completed = False
         words = [t.word for t in trajectories]
         print(f'Now attempting to solve the wordle game with the words {words}')
         while not all_games_completed:
-            trajectories = self.play(tokenizer,trajectories, llm, custom_sp, training)
+            trajectories = self.play(tokenizer, trajectories, llm, custom_sp, training)
             all_games_completed = all(trajectory.game_completed for trajectory in trajectories)
 
         completion_messages = [t.messages[2:] for t in trajectories]

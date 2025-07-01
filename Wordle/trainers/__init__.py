@@ -13,7 +13,6 @@ def grpo_defaults(run_name: str) -> GRPOConfig:
         warmup_steps=10,
         num_train_epochs=1,
         max_steps=500,
-        bf16=True,
         max_grad_norm=2.0,
         num_iterations=2,
         max_prompt_length=1024,
