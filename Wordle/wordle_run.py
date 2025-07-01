@@ -12,12 +12,12 @@ def shared_dataset(env, split: str, n_games: int):
     """
     if accelerator.is_main_process:           # rank-0
         data = env.get_dataset(split, n_games)
-        payload = [data]                      # broadcast_object_list needs a list
+        payload = [data]
     else:                                     # all other ranks
         payload = [None]
 
-    broadcast_object_list(payload, from_process=0)    # magic line
-    return payload[0]                             # everyone now has the same object
+    broadcast_object_list(payload, from_process=0)
+    return payload[0]
 
 def main():
     model_name = '/workspace/Models/Qwen2.5-3B-Instruct'
