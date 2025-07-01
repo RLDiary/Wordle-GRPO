@@ -296,12 +296,13 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         print('Words in the device:', self.accelerator.device, 'are:', all_words)
         
         T = [Trajectory(word = x["word"], word_hash = x["hash"], messages = copy.deepcopy(self.env.messages_template)) for x in inputs]
-        prompts_text = []
-        prompts_text.append(maybe_apply_chat_template({"prompt": copy.deepcopy(self.env.messages_template)}, self.processing_class)["prompt"] * len(inputs))
+        prompts_text = [maybe_apply_chat_template({"prompt": copy.deepcopy(self.env.messages_template)}, self.processing_class)["prompt"] for _ in range(len(inputs))]
+        print('The length of the prompts_text is:', len(prompts_text), self.accelerator.device)
 
         prompt_ids = self.processing_class(prompts_text, return_tensors="pt", padding=True, padding_side="left", add_special_tokens=False)
         prompt_input = Trainer._prepare_inputs(self, prompt_ids)
         prompt_ids, prompt_mask = prompt_input["input_ids"], prompt_input["attention_mask"]
+        print('The shape of prompt_ids and prompt_mask are:', prompt_ids.shape, prompt_mask.shape, self.accelerator.device)
 
         guided_decoding = False
         generation_kwargs = {
@@ -337,6 +338,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         completion_mask = [torch.tensor(mask, device=device) for mask in completion_mask]
         completion_mask = pad(completion_mask, padding_value=0, padding_side='right')
         
+        print('The shape of completion ids and completion mask are:', completion_ids.shape, completion_mask.shape, self.accelerator.device)
         prompt_completion_ids = torch.cat([prompt_ids, completion_ids], dim=1)
         attention_mask = torch.cat([prompt_mask, completion_mask], dim=1) # (B, P+C)
 
@@ -372,7 +374,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             else:
                 ref_per_token_logps = None
 
-        completions_text = self.processing_class.batch_decode(completion_ids, skip_special_tokens=True)
+        completions_text = self.processing_class.batch_decode(completion_ids, skip_special_tokens=False)
         
         # Calculate rewards for each reward function. rewards_per_func aggregates rewards across all processes. This is
         # important because rewards will be normalized per group, and completions are distributed. We will later slice
@@ -448,3 +450,60 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             "old_per_token_logps": old_per_token_logps,
             "ref_per_token_logps": ref_per_token_logps,
         }
+    
+    def _get_train_sampler(self, dataset: Optional[Dataset] = None) -> Sampler:
+        # Returns a sampler that
+        # 1. ensures each prompt is repeated across multiple processes. This guarantees that identical prompts are
+        #    distributed to different GPUs, allowing rewards to be computed and normalized correctly within each prompt
+        #    group. Using the same seed across processes ensures consistent prompt assignment, preventing discrepancies
+        #    in group formation.
+        # 2. repeats the batch multiple times to allow reusing generations across multiple updates. Refer to
+        #    _prepare_inputs to see how the generations are stored and reused.
+
+        # In the following figure, the values are the prompt indices. The first row shows the first sampled batch, the
+        # second row shows the second sampled batch, and so on.
+        #
+        #                                      |   GPU 0  |   GPU 1  |
+        #
+        #                 global_step   step    <-───>  num_generations=2
+        #                                       <-───────> per_device_train_batch_size=3
+        #  grad_accum    ▲  ▲  0          0     0   0   1   1   2   2   <- Generate for the first `steps_per_generation` (prompts 0 to 11); store the completions; use the first slice to compute the loss
+        #     =2         ▼  |  0          1     3   3   4   4   5   5   <- Take the stored generations and use the second slice to compute the loss
+        #                   |
+        #                   |  1          2     6   6   7   7   8   8   <- Take the stored generations and use the third slice to compute the loss
+        #  steps_per_gen=4  ▼  1          3     9   9  10  10  11  11   <- Take the stored generations and use the fourth slice to compute the loss
+        #
+        #                      2          4    12  12  13  13  14  14   <- Generate for the second `steps_per_generation` (prompts 12 to 23); store the completions; use the first slice to compute the loss
+        #                      2          5    15  15  16  16  17  17   <- Take the stored generations and use the second slice to compute the loss
+        #                                          ...
+        if dataset is None:
+            dataset = self.train_dataset
+        
+        print(f"""
+        num_generations: {self.num_generations}
+        generation_batch_size: {self.args.generation_batch_size}
+        num_iterations: {self.num_iterations}
+        steps_per_generation: {self.args.steps_per_generation}
+        shuffle_dataset: {self.shuffle_dataset}
+        seed: {self.args.seed}
+        mini_repeat_count: {self.num_generations}
+        repeat_count: {self.num_iterations * self.args.steps_per_generation}
+        batch_size: {self.args.generation_batch_size // self.num_generations}
+        """)
+        
+        return RepeatSampler(
+            data_source=dataset,
+            mini_repeat_count=self.num_generations,
+            batch_size=self.args.generation_batch_size // self.num_generations,
+            repeat_count=self.num_iterations * self.args.steps_per_generation,
+            shuffle=self.shuffle_dataset,
+            seed=self.args.seed,
+        )
+
+    def _get_eval_sampler(self, eval_dataset) -> Sampler:
+        # See _get_train_sampler for an explanation of the sampler.
+        return RepeatSampler(
+            data_source=eval_dataset,
+            mini_repeat_count=self.num_generations,
+            seed=self.args.seed,
+        )
