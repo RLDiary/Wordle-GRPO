@@ -30,10 +30,10 @@ def main():
     accelerator.wait_for_everyone()
 
     training_args = W.grpo_defaults(run_name=run_name)
-    training_args.report_to = 'none'
+
     training_args.beta = 0.0
     training_args.use_vllm = True
-    training_args.num_iterations=1
+    training_args.num_iterations=2
     training_args.num_generations=16
     training_args.max_prompt_length=4096
     training_args.max_completion_length=4096
@@ -42,11 +42,15 @@ def main():
     training_args.vllm_gpu_memory_utilization = 0.5
     training_args.vllm_tensor_parallel_size = 1
     training_args.per_device_train_batch_size = 8
-    training_args.generation_batch_size = 4
+    training_args.steps_per_generation = 1
     training_args.per_device_eval_batch_size = 8
     training_args.use_liger_loss = True
-    training_args.bf16_full_eval = False
-    training_args.bf16 = False
+    
+    
+    training_args.report_to = 'wandb'
+    training_args.logging_steps = 1
+    training_args.run_name = run_name
+    
     rubric = W.WordleRubric()
     reward_funcs = rubric.get_reward_funcs()
     training_args.reward_weights = rubric.get_reward_weights()
