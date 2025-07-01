@@ -184,7 +184,6 @@ class WordleEnv:
             # Isolate the Agent Response
             
             agent_response_text = agent_response.outputs[0].text
-            print(j, agent_response_text)
             trajectory = copy.deepcopy(trajectories[j])
             trajectory.num_turns += 1
 
