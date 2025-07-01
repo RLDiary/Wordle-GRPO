@@ -1,13 +1,33 @@
 
 import Wordle as W
+from accelerate import Accelerator
+from accelerate.utils import broadcast_object_list
+
+accelerator = Accelerator()
+
+def shared_dataset(env, split: str, n_games: int):
+    """
+    • Rank-0 samples the games           (any RNG is confined to that process)
+    • The list is broadcast to all ranks (deterministic without touching seeds)
+    """
+    if accelerator.is_main_process:           # rank-0
+        data = env.get_dataset(split, n_games)
+        payload = [data]                      # broadcast_object_list needs a list
+    else:                                     # all other ranks
+        payload = [None]
+
+    broadcast_object_list(payload, from_process=0)    # magic line
+    return payload[0]                             # everyone now has the same object
 
 def main():
     model_name = '/workspace/Models/Qwen2.5-3B-Instruct'
     run_name = 'Test'
     model, tokenizer = W.get_model_and_tokenizer(model_name)
     env = W.WordleEnv()
-    train_dataset = env.get_dataset(dataset='train', number_of_games=100)
-    eval_dataset = env.get_dataset(dataset='test', number_of_games=100)
+
+    train_dataset = shared_dataset(env, 'all', 100)
+    eval_dataset = shared_dataset(env, 'all', 100)
+    accelerator.wait_for_everyone()
 
     training_args = W.grpo_defaults(run_name=run_name)
     training_args.report_to = 'none'
