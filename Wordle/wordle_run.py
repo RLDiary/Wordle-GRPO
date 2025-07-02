@@ -51,7 +51,8 @@ def main():
     training_args.eval_strategy = "no"
     # training_args.per_device_eval_batch_size = 4
 
-    # Beta and KL Divergence
+    # Learning Rate, Beta and KL Divergence
+    training_args.learning_rate = 1e-6
     training_args.beta = 0.0
     training_args.sync_ref_model = False
     training_args.ref_model_mixup_alpha = 0.0
