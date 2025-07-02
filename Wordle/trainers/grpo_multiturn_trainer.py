@@ -273,6 +273,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         )
         
         self.debug = debug
+        self.assisted_completions = 0
         self.env = env
         self._eval_started = False
         self._train_started = False
@@ -323,7 +324,9 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         
         # Generate completions
         with profiling_context(self, "Solve Game"):
-            outputs = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training)
+            outputs, assist = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training)
+            if assist:
+                self.assisted_completions += 1
             self.accelerator.wait_for_everyone()
 
         completion_messages = outputs["trajectory_sans_prompt"]
@@ -416,6 +419,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         if mode == "train":
             self.state.num_input_tokens_seen += self.accelerator.gather(attention_mask.sum()).sum().item()
         self._metrics[mode]["num_tokens"] = [self.state.num_input_tokens_seen]
+        self._metrics[mode]["assisted_completions"].append(self.assisted_completions)
 
         # Log completion lengths, mean, min, max
         agg_completion_lengths = self.accelerator.gather(completion_lengths)

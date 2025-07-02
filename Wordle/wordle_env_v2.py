@@ -24,11 +24,11 @@ import hashlib
 import copy
 from pydantic import BaseModel
 from litellm import completion, batch_completion
+from langfuse import Langfuse
 from dotenv import load_dotenv
-
 load_dotenv()
 
-os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
+os.environ['OPENAI_API_KEY'] = os.getenv('WORDLE_OPENAI_API_KEY')
 
 class Output(BaseModel):
     text: str
@@ -37,6 +37,53 @@ class Output(BaseModel):
 class AgentResponse(BaseModel):
     outputs: List[Output]
     prompt_token_ids: List[Any]
+
+class Logger:
+    def __init__(self):
+        self.langfuse = self.initialize_langfuse()
+    
+    def initialize_langfuse(self):
+        return Langfuse(
+            secret_key=os.getenv("WORDLE_LANGFUSE_SECRET_KEY"),
+            public_key=os.getenv("WORDLE_LANGFUSE_PUBLIC_KEY"),
+            host=os.getenv("WORDLE_LANGFUSE_HOST")
+        )
+    
+    def log_langfuse(self, i, trajectory: Trajectory, training: bool = True, assist: bool = False):
+        
+        trace = self.langfuse.trace(
+            name=f"Train-Word-{trajectory.word}-{i}" if training else f"Eval-Word-{trajectory.word}-{i}",
+            input=trajectory.messages[0]['content'],
+            output=trajectory.messages[2:],
+            metadata={'assisted_completion': assist,
+                      'solved': trajectory.solved,
+                      'num_turns': len(trajectory.messages) // 2}
+        )
+        
+        
+        for turn, i in enumerate(range(1, len(trajectory.messages), 2), start=1):
+            user_msg = trajectory.messages[i - 1]
+            assistant_msg = trajectory.messages[i]
+
+            trace.generation(
+                name=f"turn-{turn}",
+                input=[user_msg],
+                output=[assistant_msg]
+            )
+        
+
+        self.langfuse.flush()
+        
+    
+    def log(self, trajectories: List[Trajectory], training: bool = True, assist: bool = False):
+        assisted_completions = [False] * len(trajectories)
+        if assist:
+            assisted_completions[-1] = True
+            assisted_completions[-2] = True
+        
+        for i, trajectory in enumerate(trajectories):
+            self.log_langfuse(i, trajectory, training, assisted_completions[i])
+        print("----LOGGING COMPLETED----")
 
 
 def hash_word(s: str, bits=16):
@@ -136,6 +183,7 @@ class WordleEnv:
         self.d = broker.request_dict("en_US")
         self.local_dictionary = list(json.load(open('Wordle/data/English Words Dictionary.json')).keys())
         self.nltk_words = words.words()
+        self.logger = Logger()
 
         
         self.system_prompt_template = self.jinja_env.get_template('system_prompt2.txt')
@@ -298,7 +346,7 @@ class WordleEnv:
     
     def all_failed(self, trajectories: List[Trajectory]) -> bool:
         for trajectory in trajectories:
-            if not trajectory.solved:
+            if trajectory.solved:
                 return False
         return True
     
@@ -310,6 +358,7 @@ class WordleEnv:
         for k, v in self.sampling_args.items():
             setattr(custom_sp, k, v)
         
+        assist = False
         supervisor_trajectories = [copy.deepcopy(trajectory) for trajectory in trajectories[-2:]]
         
         all_games_completed = False
@@ -324,12 +373,16 @@ class WordleEnv:
             supervisor_games_completed = False
             while not supervisor_games_completed:
                 supervisor_trajectories = self.play(tokenizer, supervisor_trajectories, llm, custom_sp, training, assist=True)
+                supervisor_games_completed = all(trajectory.game_completed for trajectory in supervisor_trajectories)
             trajectories[-2] = supervisor_trajectories[0]
             trajectories[-1] = supervisor_trajectories[1]
             if supervisor_trajectories[0].solved or supervisor_trajectories[1].solved:
-                print("Supervisor completed the task in the first attempt that the model wasn't able to complete for the following task: {}".format(supervisor_trajectories[0].word))
+                print("Supervisor completed the task that the model wasn't able to complete for the following word: {}".format(supervisor_trajectories[0].word))
+                assist = True
             else:
                 print("Supervisor failed to complete the task in the first attempt")
+        
+        self.logger.log(trajectories, training, assist)
         
         completion_messages = [t.messages[2:] for t in trajectories]
         completion_ids = [t.completion_ids for t in trajectories]
@@ -342,4 +395,4 @@ class WordleEnv:
             "trajectories": trajectories,
         }
 
-        return output
+        return output, assist
