@@ -6,7 +6,7 @@ import copy
 from typing import List, Optional, Any, Dict
 from Wordle.type import Word, Trajectory
 from Wordle import TRAIN_WORDS, ALL_WORDS
-
+import os
 import threading
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
@@ -21,7 +21,22 @@ import enchant
 import re
 from tqdm import tqdm
 import hashlib
+import copy
+from pydantic import BaseModel
+from litellm import completion, batch_completion
+from dotenv import load_dotenv
 
+load_dotenv()
+
+os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
+
+class Output(BaseModel):
+    text: str
+    token_ids: List[Any]
+
+class AgentResponse(BaseModel):
+    outputs: List[Output]
+    prompt_token_ids: List[Any]
 
 
 def hash_word(s: str, bits=16):
@@ -97,6 +112,10 @@ class WordleRubric:
 
 class WordleEnv:
     def __init__(self):
+        self.supervisor_model = 'o3'
+        self.custom_llm_provider = 'openai'
+        self.api_base = "https://api.openai.com/v1"
+        
         self.max_workers = 2
         self.max_turns = 6
         self.games_won = 0
@@ -166,18 +185,36 @@ class WordleEnv:
         word_dicts = random.sample([word.model_dump() for word in ALL_WORDS], number_of_games)
         return Dataset.from_list(word_dicts)
 
-    def generate_response(self, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams):
-        messages = [trajectory.messages for trajectory in trajectories]
+    def _agent_completion(self, messages: List[List[Dict[str, Any]]], llm: LLM, sampling_params: SamplingParams):
         agent_responses = llm.chat(messages, sampling_params=sampling_params, use_tqdm=False)
         return agent_responses
+    
+    def _supervisor_completion(self, messages: List[List[Dict[str, Any]]], llm: LLM, tokenizer: Any, sampling_params: SamplingParams) -> List[Dict[str, Any]]:
+        agent_responses = []
+        vllm_responses = self._agent_completion(messages, llm, sampling_params)
+        supervisor_results = batch_completion(model=self.supervisor_model, custom_llm_provider=self.custom_llm_provider, messages=messages)
+        
+        for i, res in enumerate(supervisor_results):
+            text = res.choices[0].message.content
+            formatted_text = text + "<|im_end|>\n"
+            formatted_token_ids = tokenizer(formatted_text, add_special_tokens=False)["input_ids"]
+            agent_responses.append(AgentResponse(outputs=[Output(text=text, token_ids=formatted_token_ids)], prompt_token_ids=vllm_responses[i].prompt_token_ids))
 
-    def play(self, tokenizer: Any, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams, training: bool = True):
+        return agent_responses
+
+    
+    def play(self, tokenizer: Any, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams, training: bool = True, assist: bool = False):
         # Force load the nltk words
         live_indices = [i for i, trajectory in enumerate(trajectories) if not trajectory.game_completed]
+        messages_to_step = [trajectories[i].messages for i in live_indices]
         if len(live_indices) == 0:
             return trajectories
         
-        agent_responses = self.generate_response(trajectories, llm, sampling_params)
+
+        if training and assist:
+            agent_responses = self._supervisor_completion(messages_to_step, llm, tokenizer, sampling_params)
+        else:
+            agent_responses = self._agent_completion(messages_to_step, llm, sampling_params)
 
 
         def update_task(j, agent_response):
@@ -259,6 +296,12 @@ class WordleEnv:
         
         return trajectories
     
+    def all_failed(self, trajectories: List[Trajectory]) -> bool:
+        for trajectory in trajectories:
+            if not trajectory.solved:
+                return False
+        return True
+    
     def solve(self, tokenizer: Any, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams, training: bool = True):
         from nltk.corpus import words
         _ = words.words()
@@ -267,13 +310,27 @@ class WordleEnv:
         for k, v in self.sampling_args.items():
             setattr(custom_sp, k, v)
         
+        supervisor_trajectories = [copy.deepcopy(trajectory) for trajectory in trajectories[-2:]]
+        
         all_games_completed = False
         words = [t.word for t in trajectories]
         print(f'Now attempting to solve the wordle game with the words {words}')
         while not all_games_completed:
             trajectories = self.play(tokenizer, trajectories, llm, custom_sp, training)
             all_games_completed = all(trajectory.game_completed for trajectory in trajectories)
-
+            
+        if training and self.all_failed(trajectories):
+            print("All games failed, first attempt at using supervisor to complete the task")
+            supervisor_games_completed = False
+            while not supervisor_games_completed:
+                supervisor_trajectories = self.play(tokenizer, supervisor_trajectories, llm, custom_sp, training, assist=True)
+            trajectories[-2] = supervisor_trajectories[0]
+            trajectories[-1] = supervisor_trajectories[1]
+            if supervisor_trajectories[0].solved or supervisor_trajectories[1].solved:
+                print("Supervisor completed the task in the first attempt that the model wasn't able to complete for the following task: {}".format(supervisor_trajectories[0].word))
+            else:
+                print("Supervisor failed to complete the task in the first attempt")
+        
         completion_messages = [t.messages[2:] for t in trajectories]
         completion_ids = [t.completion_ids for t in trajectories]
         completion_mask = [t.completion_mask for t in trajectories]
