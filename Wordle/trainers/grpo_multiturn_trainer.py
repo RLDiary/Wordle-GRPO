@@ -302,6 +302,10 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         print('Words in the device:', self.accelerator.device, 'are:', all_words)
         
         T = [Trajectory(word = x["word"], word_hash = x["hash"], messages = copy.deepcopy(self.env.messages_template)) for x in inputs]
+        
+        # We create a supervisor trajectory to be used for the supervisor to solve the task in case it is needed
+        supervisor_T = copy.deepcopy(T[-1])
+        
         prompts_text = [maybe_apply_chat_template({"prompt": copy.deepcopy(self.env.messages_template)}, self.processing_class)["prompt"] for _ in range(len(inputs))]
 
         prompt_ids = self.processing_class(prompts_text, return_tensors="pt", padding=True, padding_side="left", add_special_tokens=False)
@@ -328,12 +332,28 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             self._last_loaded_step = self.state.global_step
         
         # Generate completions
+        outcomes = []
         with profiling_context(self, "Solve Game"):
-            outputs, assist = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training)
-            if assist:
-                self.assisted_completions += 1
+            outputs = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training, assist = False)
+            outcomes.append(self.env.all_failed(outputs['trajectories']))
             self.accelerator.wait_for_everyone()
-
+            if self.accelerator.is_main_process:
+                all_outcomes = gather_object(outcomes)
+                # if all outcomes have failed, then execute the code below
+                if not any(all_outcomes):
+                    supervisor_output = self.env.solve(self.processing_class, [supervisor_T], self.llm, sampling_params, self.model.training, assist = True)
+                    
+                    if not supervisor_output["trajectories"][0].solved:
+                        print("Supervisor failed to complete the task for the following word: {}".format(supervisor_output["trajectories"][0].word))
+                    else:
+                        print("Supervisor completed the task for the following word: {}".format(supervisor_output["trajectories"][0].word))
+                        outputs["ids"][-1] = supervisor_output["ids"][0]
+                        outputs["trajectory_sans_prompt"][-1] = supervisor_output["trajectory_sans_prompt"][0]
+                        outputs["mask"][-1] = supervisor_output["mask"][0]
+                        outputs["trajectories"][-1] = supervisor_output["trajectories"][0]
+                        self.assisted_completions += 1
+            
+        self.accelerator.wait_for_everyone()
         completion_messages = outputs["trajectory_sans_prompt"]
 
         completion_ids = outputs["ids"]

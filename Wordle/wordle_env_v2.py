@@ -348,8 +348,9 @@ class WordleEnv:
             if trajectory.solved:
                 return False
         return True
+
     
-    def solve(self, tokenizer: Any, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams, training: bool = True):
+    def solve(self, tokenizer: Any, trajectories: List[Trajectory], llm: LLM, sampling_params: SamplingParams, training: bool = True, assist: bool = False):
         from nltk.corpus import words
         _ = words.words()
         
@@ -357,29 +358,12 @@ class WordleEnv:
         for k, v in self.sampling_args.items():
             setattr(custom_sp, k, v)
         
-        assist = False
-        supervisor_trajectories = [copy.deepcopy(trajectory) for trajectory in trajectories[-2:]]
-        
         all_games_completed = False
         words = [t.word for t in trajectories]
-        print(f'Now attempting to solve the wordle game with the words {words}')
+        print(f'Now attempting to solve the wordle game with the words {words} and assist is {assist}')
         while not all_games_completed:
-            trajectories = self.play(tokenizer, trajectories, llm, custom_sp, training)
+            trajectories = self.play(tokenizer, trajectories, llm, custom_sp, training, assist)
             all_games_completed = all(trajectory.game_completed for trajectory in trajectories)
-            
-        if training and self.all_failed(trajectories):
-            print("All games failed, using supervisor to complete the task")
-            supervisor_games_completed = False
-            while not supervisor_games_completed:
-                supervisor_trajectories = self.play(tokenizer, supervisor_trajectories, llm, custom_sp, training, assist=True)
-                supervisor_games_completed = all(trajectory.game_completed for trajectory in supervisor_trajectories)
-            trajectories[-2] = supervisor_trajectories[0]
-            trajectories[-1] = supervisor_trajectories[1]
-            if supervisor_trajectories[0].solved or supervisor_trajectories[1].solved:
-                print("Supervisor completed the task that the model wasn't able to complete for the following word: {}".format(supervisor_trajectories[0].word))
-                assist = True
-            else:
-                print("Supervisor failed to complete the task in the first attempt")
         
         self.logger.log(trajectories, training, assist)
         
@@ -394,4 +378,4 @@ class WordleEnv:
             "trajectories": trajectories,
         }
 
-        return output, assist
+        return output
