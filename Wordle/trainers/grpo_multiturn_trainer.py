@@ -332,7 +332,6 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             self._last_loaded_step = self.state.global_step
         
         # Generate completions
-        outcomes = []
         with profiling_context(self, "Solve Game without Supervision"):
             outputs = self.env.solve(
                 self.processing_class,
@@ -375,7 +374,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
                     outputs["trajectory_sans_prompt"][-1] = supervisor_output["trajectory_sans_prompt"][0]
                     outputs["mask"][-1] = supervisor_output["mask"][0]
                     outputs["trajectories"][-1] = supervisor_output["trajectories"][0]
-                    self.assisted_completions += 1
+                    self.assisted_completions += 1 * self.num_iterations
                 else:
                     print("Supervisor failed for word:", supervisor_output["trajectories"][0].word)    
         
