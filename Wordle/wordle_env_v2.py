@@ -239,7 +239,10 @@ class WordleEnv:
         supervisor_results = batch_completion(model=self.supervisor_model, custom_llm_provider=self.custom_llm_provider, messages=messages)
         
         for i, res in enumerate(supervisor_results):
-            text = res.choices[0].message.content
+            if 'reasoning_content' in vars(res.choices[0].message):
+                text = '<think>' + res.choices[0].message.reasoning_content + '</think>' + res.choices[0].message.content
+            else:
+                text = res.choices[0].message.content
             formatted_text = text + "<|im_end|>\n"
             formatted_token_ids = tokenizer(formatted_text, add_special_tokens=False)["input_ids"]
             agent_responses.append(AgentResponse(outputs=[Output(text=text, token_ids=formatted_token_ids)], prompt_token_ids=vllm_responses[i].prompt_token_ids))

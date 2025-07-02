@@ -394,6 +394,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         
 
         # Gather all rewards and Apply weights to each reward function's output and sum
+        self.accelerator.wait_for_everyone()
         rewards_per_func = gather(rewards_per_func)
         rewards = (rewards_per_func * self.reward_weights.to(device).unsqueeze(0)).nansum(dim=1)
         if self.accelerator.is_main_process:
