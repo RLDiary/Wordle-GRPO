@@ -1,7 +1,0 @@
-{"time":"2025-07-01T20:23:00.658429315Z","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/workspace/Wordle-GRPO/wandb/run-20250701_202259-y54e0zfx/logs/debug-core.log"}
-{"time":"2025-07-01T20:23:01.077605508Z","level":"INFO","msg":"stream: created new stream","id":"y54e0zfx"}
-{"time":"2025-07-01T20:23:01.077874237Z","level":"INFO","msg":"stream: started","id":"y54e0zfx"}
-{"time":"2025-07-01T20:23:01.077921677Z","level":"INFO","msg":"sender: started","stream_id":"y54e0zfx"}
-{"time":"2025-07-01T20:23:01.077930857Z","level":"INFO","msg":"writer: Do: started","stream_id":"y54e0zfx"}
-{"time":"2025-07-01T20:23:01.077994896Z","level":"INFO","msg":"handler: started","stream_id":"y54e0zfx"}
-{"time":"2025-07-01T20:23:01.52925605Z","level":"INFO","msg":"Starting system monitor"}

@@ -1,1 +1,0 @@
-{"_step":1,"train/global_step":0,"profiling/Time taken: GRPOMultiTurnTrainer.Solve Game":68.32208523899317,"_wandb":{"runtime":75},"profiling/Time taken: GRPOMultiTurnTrainer._move_model_to_vllm":0.7233182191848755,"_timestamp":1.7514004543706295e+09,"_runtime":70.811114799}
