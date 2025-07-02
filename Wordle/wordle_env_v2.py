@@ -75,7 +75,6 @@ class Logger:
         assisted_completions = [False] * len(trajectories)
         if assist:
             assisted_completions[-1] = True
-            assisted_completions[-2] = True
         
         for i, trajectory in enumerate(trajectories):
             self.log_langfuse(i, trajectory, training, assisted_completions[i])
