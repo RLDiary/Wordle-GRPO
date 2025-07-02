@@ -339,10 +339,12 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             self.accelerator.wait_for_everyone()
             if self.accelerator.is_main_process:
                 all_outcomes = gather_object(outcomes)
+                print(f'All outcomes are: {all_outcomes}')
                 # if all outcomes have failed, then execute the code below
                 if not any(all_outcomes):
+                    print('Initiating Supervision Completion')
                     supervisor_output = self.env.solve(self.processing_class, [supervisor_T], self.llm, sampling_params, self.model.training, assist = True)
-                    
+                    print('Supervisor Completion Complete')
                     if not supervisor_output["trajectories"][0].solved:
                         print("Supervisor failed to complete the task for the following word: {}".format(supervisor_output["trajectories"][0].word))
                     else:
