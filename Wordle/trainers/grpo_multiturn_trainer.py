@@ -22,8 +22,7 @@ from transformers.utils import is_peft_available
 from collections.abc import Sized
 from trl import GRPOTrainer, GRPOConfig
 from trl.data_utils import maybe_apply_chat_template
-from trl.utils import print_prompt_completions_sample
-from trl.trainer.utils import pad
+from trl.trainer.utils import print_prompt_completions_sample, pad
 from trl.extras.profiling import profiling_decorator, profiling_context
 import copy
 from Wordle import WordleEnv, Word, Trajectory
