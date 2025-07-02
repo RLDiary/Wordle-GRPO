@@ -1,1 +1,24 @@
-wordle_env.py
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# Parquet files
+*.parquet
+
+# Build stuff
+build/
+dist/
+*.egg-info/
+
+# Virtual environment
+.venv/
+
+# Other Folders
+TauBench-GRPO-Code/
+Saved-Models/
+wandb/
+roughnote.ipynb
+cheatsheet.md
