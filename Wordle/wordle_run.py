@@ -41,7 +41,6 @@ def main():
     training_args = W.grpo_defaults(run_name=run_name)
 
     # Saving Config
-    training_args.should_save = True
     training_args.save_strategy = "steps"
     training_args.save_steps = 300
     training_args.output_dir = f"/workspace/Wordle-GRPO/Saved-Models/{run_name}"
