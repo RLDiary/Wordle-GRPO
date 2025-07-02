@@ -41,6 +41,18 @@ def main():
     # Initialize Training Arguments
     training_args = W.grpo_defaults(run_name=run_name)
 
+    # Saving Config
+    training_args.should_save = True
+    training_args.save_strategy = "steps"
+    training_args.save_steps = 100
+    training_args.output_dir = f"/workspace/Wordle-GRPO/Saved-Models/{run_name}"
+    training_args.overwrite_output_dir = True
+    training_args.save_total_limit = 5
+
+    # Evaluation Config
+    training_args.eval_strategy = "no"
+    # training_args.per_device_eval_batch_size = 4
+
     # Beta and KL Divergence
     training_args.beta = 0.0
     training_args.sync_ref_model = False
@@ -53,13 +65,14 @@ def main():
     # Batch Size Parameters
     training_args.per_device_train_batch_size = 4
     training_args.steps_per_generation = 1
-    training_args.per_device_eval_batch_size = 4
+    training_args.max_steps=1000
+
     
     # Max Length Parameters
     training_args.max_prompt_length=4096
     training_args.max_completion_length=4096
     
-    training_args.max_steps=100
+    
 
     # VLLM Config
     training_args.use_vllm = True
@@ -94,6 +107,9 @@ def main():
         "max_tokens": 1024
     }
 
+    # Printing Completions
+    training_args.num_completions_to_print = 1
+
     trainer = W.GRPOMultiTurnTrainer(
         model=model,
         processing_class=tokenizer,
@@ -101,7 +117,6 @@ def main():
         reward_funcs=reward_funcs,
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
     )
 
     trainer.train()
