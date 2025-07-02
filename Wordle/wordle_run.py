@@ -35,7 +35,6 @@ def main():
     # Initialize Environment and Get Dataset
     env = W.WordleEnv()
     train_dataset = shared_dataset(env, 'all', 100)
-    eval_dataset = shared_dataset(env, 'all', 100)
     accelerator.wait_for_everyone()
 
     # Initialize Training Arguments
@@ -44,7 +43,7 @@ def main():
     # Saving Config
     training_args.should_save = True
     training_args.save_strategy = "steps"
-    training_args.save_steps = 100
+    training_args.save_steps = 300
     training_args.output_dir = f"/workspace/Wordle-GRPO/Saved-Models/{run_name}"
     training_args.overwrite_output_dir = True
     training_args.save_total_limit = 5
