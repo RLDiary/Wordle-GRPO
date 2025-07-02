@@ -333,28 +333,52 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         
         # Generate completions
         outcomes = []
-        with profiling_context(self, "Solve Game"):
-            outputs = self.env.solve(self.processing_class, T, self.llm, sampling_params, self.model.training, assist = False)
-            outcomes.append(self.env.all_failed(outputs['trajectories']))
+        with profiling_context(self, "Solve Game without Supervision"):
+            outputs = self.env.solve(
+                self.processing_class,
+                T,
+                self.llm,
+                sampling_params,
+                self.model.training,
+                assist=False,
+            )
+            # ------------------------------------------------------------------
+            # 2. Check failure locally and reduce across ranks
+            # ------------------------------------------------------------------
+            local_fail = torch.tensor(
+                int(self.env.all_failed(outputs["trajectories"])),
+                device=self.accelerator.device,
+            )
+            # Sum → if the total == num_processes, then *every* rank failed
+            global_fail = self.accelerator.reduce(local_fail, reduction="sum")
+
+            # Make sure all ranks have computed the reduction before branching
             self.accelerator.wait_for_everyone()
-            if self.accelerator.is_main_process:
-                all_outcomes = gather_object(outcomes)
-                print(f'All outcomes are: {all_outcomes}')
-                # if all outcomes have failed, then execute the code below
-                if not any(all_outcomes):
-                    print('Initiating Supervision Completion')
-                    supervisor_output = self.env.solve(self.processing_class, [supervisor_T], self.llm, sampling_params, self.model.training, assist = True)
-                    print('Supervisor Completion Complete')
-                    if not supervisor_output["trajectories"][0].solved:
-                        print("Supervisor failed to complete the task for the following word: {}".format(supervisor_output["trajectories"][0].word))
-                    else:
-                        print("Supervisor completed the task for the following word: {}".format(supervisor_output["trajectories"][0].word))
-                        outputs["ids"][-1] = supervisor_output["ids"][0]
-                        outputs["trajectory_sans_prompt"][-1] = supervisor_output["trajectory_sans_prompt"][0]
-                        outputs["mask"][-1] = supervisor_output["mask"][0]
-                        outputs["trajectories"][-1] = supervisor_output["trajectories"][0]
-                        self.assisted_completions += 1
-            
+        
+        
+        if self.accelerator.is_main_process and global_fail.item() == self.accelerator.num_processes:
+            with profiling_context(self, "Supervisor Completion"):
+                print("Initiating Supervision Completion (rank 0)")
+                supervisor_output = self.env.solve(
+                    self.processing_class,
+                    [supervisor_T],
+                    self.llm,
+                    sampling_params,
+                    self.model.training,
+                    assist=True,
+                )
+
+                if supervisor_output["trajectories"][0].solved:
+                    print("Supervisor solved word:", supervisor_output["trajectories"][0].word)
+                    # Patch *only* the local outputs on rank 0
+                    outputs["ids"][-1] = supervisor_output["ids"][0]
+                    outputs["trajectory_sans_prompt"][-1] = supervisor_output["trajectory_sans_prompt"][0]
+                    outputs["mask"][-1] = supervisor_output["mask"][0]
+                    outputs["trajectories"][-1] = supervisor_output["trajectories"][0]
+                    self.assisted_completions += 1
+                else:
+                    print("Supervisor failed for word:", supervisor_output["trajectories"][0].word)    
+        
         self.accelerator.wait_for_everyone()
         completion_messages = outputs["trajectory_sans_prompt"]
 
@@ -447,7 +471,8 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         if mode == "train":
             self.state.num_input_tokens_seen += self.accelerator.gather(attention_mask.sum()).sum().item()
         self._metrics[mode]["num_tokens"] = [self.state.num_input_tokens_seen]
-        self._metrics[mode]["assisted_completions"].append(self.assisted_completions)
+        if self.accelerator.is_main_process:
+            self._metrics[mode]["assisted_completions"].append(self.assisted_completions)
 
         # Log completion lengths, mean, min, max
         agg_completion_lengths = self.accelerator.gather(completion_lengths)
