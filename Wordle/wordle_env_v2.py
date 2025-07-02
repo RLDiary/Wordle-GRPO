@@ -29,6 +29,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 os.environ['OPENAI_API_KEY'] = os.getenv('WORDLE_OPENAI_API_KEY')
+os.environ['LANGFUSE_SECRET_KEY'] = os.getenv('WORDLE_LANGFUSE_SECRET_KEY')
+os.environ['LANGFUSE_PUBLIC_KEY'] = os.getenv('WORDLE_LANGFUSE_PUBLIC_KEY')
+os.environ['LANGFUSE_HOST'] = os.getenv('WORDLE_LANGFUSE_HOST')
 
 class Output(BaseModel):
     text: str
@@ -40,14 +43,7 @@ class AgentResponse(BaseModel):
 
 class Logger:
     def __init__(self):
-        self.langfuse = self.initialize_langfuse()
-    
-    def initialize_langfuse(self):
-        return Langfuse(
-            secret_key=os.getenv("WORDLE_LANGFUSE_SECRET_KEY"),
-            public_key=os.getenv("WORDLE_LANGFUSE_PUBLIC_KEY"),
-            host=os.getenv("WORDLE_LANGFUSE_HOST")
-        )
+        self.langfuse = Langfuse()
     
     def log_langfuse(self, i, trajectory: Trajectory, training: bool = True, assist: bool = False):
         
@@ -369,7 +365,7 @@ class WordleEnv:
             all_games_completed = all(trajectory.game_completed for trajectory in trajectories)
             
         if training and self.all_failed(trajectories):
-            print("All games failed, first attempt at using supervisor to complete the task")
+            print("All games failed, using supervisor to complete the task")
             supervisor_games_completed = False
             while not supervisor_games_completed:
                 supervisor_trajectories = self.play(tokenizer, supervisor_trajectories, llm, custom_sp, training, assist=True)
