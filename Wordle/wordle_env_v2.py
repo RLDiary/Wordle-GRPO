@@ -29,9 +29,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 os.environ['OPENAI_API_KEY'] = os.getenv('WORDLE_OPENAI_API_KEY')
-os.environ['LANGFUSE_SECRET_KEY'] = os.getenv('WORDLE_LANGFUSE_SECRET_KEY')
-os.environ['LANGFUSE_PUBLIC_KEY'] = os.getenv('WORDLE_LANGFUSE_PUBLIC_KEY')
-os.environ['LANGFUSE_HOST'] = os.getenv('WORDLE_LANGFUSE_HOST')
 
 class Output(BaseModel):
     text: str
@@ -43,30 +40,28 @@ class AgentResponse(BaseModel):
 
 class Logger:
     def __init__(self):
-        self.langfuse = Langfuse()
+        self.langfuse = Langfuse(
+            public_key=os.getenv('WORDLE_LANGFUSE_PUBLIC_KEY'),
+            secret_key=os.getenv('WORDLE_LANGFUSE_SECRET_KEY'),
+            host=os.getenv('WORDLE_LANGFUSE_HOST')
+        )
     
     def log_langfuse(self, i, trajectory: Trajectory, training: bool = True, assist: bool = False):
         
-        trace = self.langfuse.trace(
-            name=f"Train-Word-{trajectory.word}-{i}" if training else f"Eval-Word-{trajectory.word}-{i}",
-            input=trajectory.messages[0]['content'],
-            output=trajectory.messages[2:],
-            metadata={'assisted_completion': assist,
-                      'solved': trajectory.solved,
-                      'num_turns': len(trajectory.messages) // 2}
-        )
+        trace_name = f"Train-Word-{trajectory.word}-{i}" if training else f"Eval-Word-{trajectory.word}-{i}"
+        completed_by = "Agent" if not assist else "Supervisor"
         
-        
-        for turn, i in enumerate(range(1, len(trajectory.messages), 2), start=1):
-            user_msg = trajectory.messages[i - 1]
-            assistant_msg = trajectory.messages[i]
+        with self.langfuse.start_as_current_span(name=trace_name, input=trajectory.messages[0]['content']) as root_span:
+            root_span.update_trace(name=trace_name,tags=[trajectory.word, completed_by], metadata={"word": trajectory.word, "completed_by": completed_by})
+            root_span.update_trace(input=trajectory.messages[0]['content'])
+            root_span.update_trace(output=trajectory.messages[1:])
 
-            trace.generation(
-                name=f"turn-{turn}",
-                input=[user_msg],
-                output=[assistant_msg]
-            )
-        
+            for turn, i in enumerate(range(1, len(trajectory.messages), 2), start=1):
+                user_msg = trajectory.messages[i - 1]
+                assistant_msg = trajectory.messages[i]
+
+                with self.langfuse.start_as_current_generation(name=f"turn-{turn}", input=user_msg['content']) as generation:
+                    generation.update(output=assistant_msg['content'])
 
         self.langfuse.flush()
         
