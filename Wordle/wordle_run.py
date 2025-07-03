@@ -27,14 +27,14 @@ def shared_dataset(env, split: str, n_games: int):
     return payload[0]
 
 def main():
-    model_name = '/workspace/Models/Qwen2.5-3B-WORDLE-FineTune'
+    model_name = '/workspace/Models/Qwen2.5-3B'
     run_name = f'Initial-A5000-TestRuns-{date}-{time}'
     
     model, tokenizer = W.get_model_and_tokenizer(model_name)
     
     # Initialize Environment and Get Dataset
     env = W.WordleEnv()
-    train_dataset = shared_dataset(env, 'all', 100)
+    train_dataset = shared_dataset(env, 'all', 1000)
     accelerator.wait_for_everyone()
 
     # Initialize Training Arguments
@@ -59,10 +59,10 @@ def main():
     
     # Training Config
     training_args.num_iterations=2
-    training_args.num_generations=8
+    training_args.num_generations=6
 
     # Batch Size Parameters
-    training_args.per_device_train_batch_size = 4
+    training_args.per_device_train_batch_size = 3
     training_args.steps_per_generation = 1
     training_args.max_steps=1000
 
@@ -76,7 +76,7 @@ def main():
     # VLLM Config
     training_args.use_vllm = True
     training_args.vllm_mode = 'colocate'
-    training_args.vllm_gpu_memory_utilization = 0.4
+    training_args.vllm_gpu_memory_utilization = 0.3
     training_args.vllm_tensor_parallel_size = 1
     
     # Loss Config
