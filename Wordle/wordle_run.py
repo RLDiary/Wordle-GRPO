@@ -27,7 +27,7 @@ def shared_dataset(env, split: str, n_games: int):
     return payload[0]
 
 def main():
-    model_name = '/workspace/Models/Qwen2.5-3B-Instruct'
+    model_name = '/workspace/Models/Qwen2.5-3B-WORDLE-FineTune'
     run_name = f'Initial-A5000-TestRuns-{date}-{time}'
     
     model, tokenizer = W.get_model_and_tokenizer(model_name)
