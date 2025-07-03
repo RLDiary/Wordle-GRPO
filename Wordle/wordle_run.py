@@ -61,7 +61,7 @@ def main():
     training_args.ref_model_mixup_alpha = 0.0
     
     # Training Config
-    training_args.num_iterations=1
+    training_args.num_iterations=2
     training_args.num_generations=10
 
     # Batch Size Parameters

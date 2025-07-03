@@ -256,7 +256,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             debug: bool = False,
             run_name: str = "",
             scale_rewards: bool = False,
-            loss_type: str = "dapo",
+            loss_type: str = "bnpo",
             multiplier_type: Optional[str] = None,
             **kwargs,
     ):
@@ -282,13 +282,13 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         self.env = env
         self._eval_started = False
         self._train_started = False
-        self.scale_rewards = scale_rewards
-        self.loss_type = loss_type
+        self.scale_rewards = args.scale_rewards
+        self.loss_type = args.loss_type
 
         self._initial_eval = True
         self.run_name = run_name
 
-        self.multiplier_type = multiplier_type
+        # self.multiplier_type = multiplier_type
 
     def _generate_and_score_completions(
         self, inputs: list[dict[str, Union[torch.Tensor, Any]]]
