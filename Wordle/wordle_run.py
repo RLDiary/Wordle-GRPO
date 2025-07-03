@@ -27,14 +27,17 @@ def shared_dataset(env, split: str, n_games: int):
     return payload[0]
 
 def main():
-    model_name = '/workspace/Models/Qwen2.5-3B'
+    model_name = 'vigneshR/Qwen2.5-3B-WORDLE-FineTune'
     run_name = f'Initial-A5000-TestRuns-{date}-{time}'
     
+    print('Loading Model...')
     model, tokenizer = W.get_model_and_tokenizer(model_name)
+    print('Model Loaded')
     
     # Initialize Environment and Get Dataset
     env = W.WordleEnv()
     train_dataset = shared_dataset(env, 'all', 1000)
+    print('Now waiting for everyone to finish...')
     accelerator.wait_for_everyone()
 
     # Initialize Training Arguments
