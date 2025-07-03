@@ -629,22 +629,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         attention_mask = torch.cat([prompt_mask, completion_mask], dim=1)
         logits_to_keep = completion_ids.size(1)  # we only need to compute the logits for the completion tokens
 
-        # Compute the entropy at each position in the completion
-        if self.token_entropy_percentile_threshold > 0.0:
-            logps_and_entropies = self._get_per_token_logps_and_entropies(
-                model, input_ids, attention_mask, logits_to_keep, compute_entropy=True
-            )
-            per_token_logps = logps_and_entropies["logps"]
-            entropies = logps_and_entropies["entropies"]
-            # compute the entropy threshold across all tokens in the batch
-
-            entropy_threshold = torch.quantile(entropies.flatten(), self.token_entropy_percentile_threshold)
-            entropy_mask = entropies >= entropy_threshold
-        else:
-            per_token_logps = self._get_per_token_logps_and_entropies(
-                model, input_ids, attention_mask, logits_to_keep
-            )["logps"]
-            entropy_mask = None
+        per_token_logps = self._get_per_token_logps(model, input_ids, attention_mask, logits_to_keep)
 
         # Compute the KL divergence between the model and the reference model
         if self.beta != 0.0:
@@ -671,8 +656,6 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         per_token_loss1 = coef_1 * advantages.unsqueeze(1)
         per_token_loss2 = coef_2 * advantages.unsqueeze(1)
         per_token_loss = -torch.min(per_token_loss1, per_token_loss2)
-        if entropy_mask is not None:
-            per_token_loss = per_token_loss * entropy_mask
         if self.beta != 0.0:
             per_token_loss = per_token_loss + self.beta * per_token_kl
 

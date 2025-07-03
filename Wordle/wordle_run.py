@@ -27,7 +27,7 @@ def shared_dataset(env, split: str, n_games: int):
     return payload[0]
 
 def main():
-    model_name = '/workspace/Models/Qwen2.5-3B-WORDLE-FineTune'
+    model_name = '/workspace/Models/Qwen2.5-7B-WORDLE-FineTune'
     run_name = f'Initial-A5000-TestRuns-{date}-{time}'
     
     print('Loading Model...')
@@ -45,7 +45,7 @@ def main():
 
     # Saving Config
     training_args.save_strategy = "steps"
-    training_args.save_steps = 300
+    training_args.save_steps = 250
     training_args.output_dir = f"/workspace/Wordle-GRPO/Saved-Models/{run_name}"
     training_args.overwrite_output_dir = True
     training_args.save_total_limit = 5
@@ -61,11 +61,11 @@ def main():
     training_args.ref_model_mixup_alpha = 0.0
     
     # Training Config
-    training_args.num_iterations=2
-    training_args.num_generations=6
+    training_args.num_iterations=1
+    training_args.num_generations=10
 
     # Batch Size Parameters
-    training_args.per_device_train_batch_size = 3
+    training_args.per_device_train_batch_size = 5
     training_args.steps_per_generation = 1
     training_args.max_steps=1000
 
@@ -79,13 +79,13 @@ def main():
     # VLLM Config
     training_args.use_vllm = True
     training_args.vllm_mode = 'colocate'
-    training_args.vllm_gpu_memory_utilization = 0.3
+    training_args.vllm_gpu_memory_utilization = 0.4
     training_args.vllm_tensor_parallel_size = 1
     
     # Loss Config
     training_args.loss_type = 'bnpo'
     training_args.scale_rewards = False
-    training_args.use_liger_loss = True
+    training_args.use_liger_loss = False
     training_args.bf16_full_eval = True
     training_args.bf16 = True
     
@@ -110,7 +110,7 @@ def main():
     }
 
     # Printing Completions
-    training_args.num_completions_to_print = 1
+    training_args.num_completions_to_print = 0
 
     trainer = W.GRPOMultiTurnTrainer(
         model=model,
