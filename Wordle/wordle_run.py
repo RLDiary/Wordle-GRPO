@@ -27,7 +27,7 @@ def shared_dataset(env, split: str, n_games: int):
     return payload[0]
 
 def main():
-    model_name = 'vigneshR/Qwen2.5-3B-WORDLE-FineTune'
+    model_name = '/workspace/Models/Qwen2.5-3B-WORDLE-FineTune'
     run_name = f'Initial-A5000-TestRuns-{date}-{time}'
     
     print('Loading Model...')
