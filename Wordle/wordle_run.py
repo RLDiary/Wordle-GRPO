@@ -89,7 +89,7 @@ def main(model_name: str):
         "n": 1,
         "temperature": 1.0,
         "repetition_penalty": 1.0,
-        "frequency_penalty": 1.0,
+        "frequency_penalty": 0.5,
         "min_p": 0,
         "top_p": 0.95,
         "top_k": -1,
