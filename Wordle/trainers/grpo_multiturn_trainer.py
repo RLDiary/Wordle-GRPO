@@ -773,6 +773,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         # Compute and log average entropy for unmasked completion tokens
         if entropies is not None:
             mean_entropy = (entropies * completion_mask).sum() / completion_mask.sum().clamp(min=1.0)
-            self._metrics[mode]["group_average_entropy"].append(self.accelerator.gather(mean_entropy).nanmean().item())
+            self._metrics[mode]["group_entropy_mean"].append(self.accelerator.gather(mean_entropy).nanmean().item())
+            self._metrics[mode]["group_entropy_std"].append(self.accelerator.gather(mean_entropy).nanstd().item())
         
         return loss
