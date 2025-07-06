@@ -13,6 +13,8 @@ class Trajectory(BaseModel):
     solved: Optional[bool] = False
     game_completed: Optional[bool] = False
     num_turns: Optional[int] = 0
+    guesses: Optional[list[str]] = []
+    feedback: Optional[list[str]] = []
 
 class Word(BaseModel):
     df_index: Optional[int] = None

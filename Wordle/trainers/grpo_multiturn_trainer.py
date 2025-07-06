@@ -22,7 +22,7 @@ from transformers.utils import is_peft_available
 from collections.abc import Sized
 from trl import GRPOTrainer, GRPOConfig
 from trl.data_utils import maybe_apply_chat_template
-from trl.trainer.utils import print_prompt_completions_sample, pad
+from trl.trainer.utils import print_prompt_completions_sample, pad, selective_log_softmax
 from trl.extras.profiling import profiling_decorator, profiling_context
 import copy
 from Wordle import WordleEnv, Word, Trajectory
@@ -33,7 +33,7 @@ import datetime
 import copy
 from torch.utils.data import DataLoader, Sampler
 import random
-
+import torch.nn.functional as F
 
 if is_peft_available():
     from peft import PeftConfig # type: ignore
@@ -42,6 +42,31 @@ if is_wandb_available():
     import wandb
 
 RewardFunc = Union[str, PreTrainedModel, Callable[[list, list], list[float]]]
+
+def entropy_from_logits(logits, chunk_size: int = 1) -> torch.Tensor:
+    """
+    Compute the Shannon entropy (in nats) for each row of *logits* without
+    materialising the full soft-max in memory.
+    The batch dimension is processed in chunks of size `chunk_size` so that
+    only a subset of rows is expanded to probabilities at any one time.
+    Args:
+        logits (`torch.Tensor`):
+            Logits tensor of shape `(..., num_classes)`. Entropy is taken along the last axis; all
+            leading dimensions are preserved.
+        chunk_size (`int`, *optional*, defaults to `1`):
+            Number of rows to process per iteration.
+    Returns:
+        `torch.Tensor`:
+            Entropy values with shape `logits.shape[:-1]`.
+    """
+    per_token_entropies = []
+    for logits_chunk in logits.split(chunk_size, dim=0):
+        logps = F.log_softmax(logits_chunk, dim=-1)
+        chunk_entropy = -(torch.exp(logps) * logps).sum(-1)
+        per_token_entropies.extend(chunk_entropy)
+
+    per_token_entropies = torch.stack(per_token_entropies)
+    return per_token_entropies
 
 def split_tensor_dict(
     tensor_dict: dict[str, Optional[torch.Tensor]], num_chunks: int
@@ -405,9 +430,9 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             # old_per_token_logps == per_token_logps, so we can skip it's computation here, and use
             # per_token_logps.detach() instead.
             if self.num_iterations > 1 or self.args.steps_per_generation > self.args.gradient_accumulation_steps:
-                old_per_token_logps = self._get_per_token_logps(
+                old_per_token_logps = self._get_per_token_logps_and_entropies(
                     self.model, prompt_completion_ids, attention_mask, logits_to_keep, batch_size
-                )
+                )["logps"]
             else:
                 old_per_token_logps = None
 
@@ -415,14 +440,14 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
              # Compute the per-token log probabilities for the reference model
             if self.beta != 0.0:
                 if self.ref_model is not None:
-                    ref_per_token_logps = self._get_per_token_logps(
+                    ref_per_token_logps = self._get_per_token_logps_and_entropies(
                         self.ref_model, prompt_completion_ids, attention_mask, logits_to_keep
-                    )
+                    )["logps"]
                 else:
                     with self.accelerator.unwrap_model(self.model).disable_adapter():
-                        ref_per_token_logps = self._get_per_token_logps(
+                        ref_per_token_logps = self._get_per_token_logps_and_entropies(
                             self.model, prompt_completion_ids, attention_mask, logits_to_keep
-                        )
+                        )["logps"]
             else:
                 ref_per_token_logps = None
 
@@ -621,6 +646,43 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             print("Using local GRPO Trainer Loss")
             return self._compute_loss(model, inputs)
 
+    
+    
+    @profiling_decorator
+    def _get_per_token_logps_and_entropies(
+        self, model, input_ids, attention_mask, logits_to_keep, batch_size=None, compute_entropy=False
+    ) -> dict[str, Optional[torch.Tensor]]:
+        """Compute log‐probs and (optionally) entropies for each token."""
+        batch_size = batch_size or input_ids.size(0)  # Chunk inputs into smaller batches to reduce memory peak
+        all_logps = []
+        all_entropies = []
+        for start in range(0, input_ids.size(0), batch_size):
+            input_ids_batch = input_ids[start : start + batch_size]
+            attention_mask_batch = attention_mask[start : start + batch_size]
+
+            # We add 1 to `logits_to_keep` because the last logits of the sequence is later excluded
+            logits = model(
+                input_ids=input_ids_batch,
+                attention_mask=attention_mask_batch,
+                logits_to_keep=logits_to_keep + 1,
+            ).logits
+            logits = logits[:, :-1, :]  # (B, L-1, V), exclude the last logit: it corresponds to the next token pred
+            # Divide logits by sampling temperature.
+            # See https://huggingface.co/blog/the_n_implementation_details_of_rlhf_with_ppo#policy-training-implementation-details
+            logits = logits / self.temperature
+
+            completion_ids = input_ids_batch[:, -logits_to_keep:]
+            logps = selective_log_softmax(logits, completion_ids)  # compute logprobs
+            all_logps.append(logps)
+
+            if compute_entropy:
+                entropies = entropy_from_logits(logits)
+                all_entropies.append(entropies)
+
+        logps = torch.cat(all_logps, dim=0)
+        entropies = torch.cat(all_entropies, dim=0) if compute_entropy else None
+        return {"logps": logps, "entropies": entropies}
+    
     def _compute_loss(self, model, inputs):
         # Compute the per-token log probabilities for the model
         prompt_ids, prompt_mask = inputs["prompt_ids"], inputs["prompt_mask"]
@@ -629,7 +691,11 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         attention_mask = torch.cat([prompt_mask, completion_mask], dim=1)
         logits_to_keep = completion_ids.size(1)  # we only need to compute the logits for the completion tokens
 
-        per_token_logps = self._get_per_token_logps(model, input_ids, attention_mask, logits_to_keep)
+        logps_and_entropies = self._get_per_token_logps_and_entropies(
+                model, input_ids, attention_mask, logits_to_keep, compute_entropy=True
+            )
+        per_token_logps = logps_and_entropies["logps"]
+        entropies = logps_and_entropies["entropies"]
 
         # Compute the KL divergence between the model and the reference model
         if self.beta != 0.0:
@@ -647,15 +713,20 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             per_token_logps.detach() if inputs["old_per_token_logps"] is None else inputs["old_per_token_logps"]
         )
         coef_1 = torch.exp(per_token_logps - old_per_token_logps)
-        coef_2 = torch.clamp(coef_1, 1 - self.epsilon_low, 1 + self.epsilon_high)
 
-        # Two-sided clipping
-        if self.args.delta is not None:
-            coef_1 = torch.clamp(coef_1, max=self.args.delta)
-
-        per_token_loss1 = coef_1 * advantages.unsqueeze(1)
-        per_token_loss2 = coef_2 * advantages.unsqueeze(1)
-        per_token_loss = -torch.min(per_token_loss1, per_token_loss2)
+        if self.loss_type == "cispo":
+            clipped_is = torch.clamp(coef_1, 1 - self.epsilon_low, 1 + self.epsilon_high)
+            clipped_is_detached = clipped_is.detach()  #   sg(·)     —— Eq.(4)
+            per_token_loss = -clipped_is_detached * advantages.unsqueeze(1) * per_token_logps
+        else:
+            coef_2 = torch.clamp(coef_1, 1 - self.epsilon_low, 1 + self.epsilon_high)
+            # Two-sided clipping
+            if self.args.delta is not None:
+                coef_1 = torch.clamp(coef_1, max=self.args.delta)
+            per_token_loss1 = coef_1 * advantages.unsqueeze(1)
+            per_token_loss2 = coef_2 * advantages.unsqueeze(1)
+            per_token_loss = -torch.min(per_token_loss1, per_token_loss2)
+        
         if self.beta != 0.0:
             per_token_loss = per_token_loss + self.beta * per_token_kl
 
@@ -665,6 +736,8 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             loss = (per_token_loss * completion_mask).sum() / completion_mask.sum().clamp(min=1.0)
         elif self.loss_type == "dr_grpo":
             loss = (per_token_loss * completion_mask).sum() / (per_token_loss.size(0) * self.max_completion_length)
+        elif self.loss_type == "cispo":
+            loss = (per_token_loss * completion_mask).sum() / completion_mask.sum().clamp(min=1.0)
         else:
             raise ValueError(f"Unknown loss type: {self.loss_type}")
 
@@ -676,10 +749,14 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             self._metrics[mode]["kl"].append(self.accelerator.gather(mean_kl).nanmean().item())
 
         # Compute the clipped probability ratios
-        is_low_clipped = (coef_1 < 1 - self.epsilon_low) & (advantages.unsqueeze(1) < 0)
-        is_high_clipped = (coef_1 > 1 + self.epsilon_high) & (advantages.unsqueeze(1) > 0)
+        if self.loss_type == "cispo":
+            is_low_clipped   = (coef_1 < 1 - self.epsilon_low)
+            is_high_clipped  = (coef_1 > 1 + self.epsilon_high)
+        else:
+            is_low_clipped = (coef_1 < 1 - self.epsilon_low) & (advantages.unsqueeze(1) < 0)
+            is_high_clipped = (coef_1 > 1 + self.epsilon_high) & (advantages.unsqueeze(1) > 0)
+            
         is_region_clipped = is_low_clipped | is_high_clipped
-
         low_clip = (is_low_clipped * completion_mask).sum() / completion_mask.sum()
         high_clip = (is_high_clipped * completion_mask).sum() / completion_mask.sum()
         clip_ratio = (is_region_clipped * completion_mask).sum() / completion_mask.sum()
@@ -692,4 +769,10 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         self._metrics[mode]["clip_ratio/high_max"].append(nanmax(gathered_high_clip).item())
         gathered_clip_ratio = self.accelerator.gather(clip_ratio)
         self._metrics[mode]["clip_ratio/region_mean"].append(gathered_clip_ratio.nanmean().item())
+
+        # Compute and log average entropy for unmasked completion tokens
+        if entropies is not None:
+            mean_entropy = (entropies * completion_mask).sum() / completion_mask.sum().clamp(min=1.0)
+            self._metrics[mode]["group_average_entropy"].append(self.accelerator.gather(mean_entropy).nanmean().item())
+        
         return loss

@@ -83,8 +83,8 @@ def main():
     training_args.vllm_tensor_parallel_size = 1
     
     # Loss Config
-    training_args.loss_type = 'bnpo'
-    training_args.scale_rewards = False
+    training_args.loss_type = 'cispo'
+    training_args.scale_rewards = True
     training_args.use_liger_loss = False
     training_args.bf16_full_eval = True
     training_args.bf16 = True

@@ -101,13 +101,13 @@ class WordleRubric:
     def __init__(self, **kwargs):
         self.reward_funcs = [
             self.game_completion_reward,
-            self.format_error_penalty
+            self.format_score
             ]
         
-        self.reward_weights = [5.0,3.0]
+        self.reward_weights = [1.0, 1.0]
         
-        self.penalty_score = -1.0
-        self.reward_score = 1.0
+        self.format_score = 0.1
+        self.solved_score = 1.0
     
     def game_completion_reward(self, trajectories: List[Trajectory]) -> List[float]:
         """
@@ -116,26 +116,42 @@ class WordleRubric:
         rewards = []
         for trajectory in trajectories:
             reward = 0.0
-            if trajectory.solved:
-                reward = self.reward_score
+            if self.format_score([trajectory])[0] == 0.0:
+                reward = 0.0
+            elif trajectory.solved:
+                reward = self.solved_score
+            else:
+                position_rewards = {} # type: ignore
+                for char in trajectory.word:
+                    position_rewards[char] = 0.0
+                for guess, feedback_str in zip(trajectory.guesses, trajectory.feedback):
+                    if feedback_str == 'INVALID':
+                        continue
+                    for letter, feedback_char in zip(guess, feedback_str):
+                        if feedback_char == 'G':
+                            position_rewards[letter] = 0.2
+                        elif feedback_char == 'Y':
+                            position_rewards[letter] = max(position_rewards[letter], 0.14)
+                reward = sum(position_rewards.values())
+            
             rewards.append(reward)
         return rewards
 
-    def format_error_penalty(self, trajectories: List[Trajectory]) -> List[float]:
+    def format_score(self, trajectories: List[Trajectory]) -> List[float]:
         """
         Penalize trajectories that do not contain the <think> and <answer> tags
         """
         rewards = []
         for trajectory in trajectories:
-            reward = 0.0
+            reward = self.format_score
             for message in trajectory.messages:
                 if message['role'] == 'user':
                     continue
                 if '<think>' not in message['content'] or '</think>' not in message['content']:
-                    reward = self.penalty_score
+                    reward = 0.0
                     break
                 elif '<answer>' not in message['content'] or '</answer>' not in message['content']:
-                    reward = self.penalty_score
+                    reward = 0.0
                     break
             rewards.append(reward)
         return rewards
@@ -303,8 +319,17 @@ class WordleEnv:
             if guess:
                 feedback = self.get_feedback(guess, trajectory.word)
                 trajectory.messages.append({'role': 'user', 'content': feedback})
+                if not feedback.startswith('Invalid'):
+                    trajectory.feedback.append(feedback.split('->')[-1].strip())
+                else:
+                    trajectory.feedback.append('INVALID')
             else:
                 trajectory.messages.append({'role': 'user', 'content': f'Invalid format, stick to the <think>, </think> and <answer>, </answer> tags provided in the system prompt'})
+                guess = 'INVALID'
+                trajectory.feedback.append('INVALID')
+                trajectory.game_completed = True
+            
+            trajectory.guesses.append(guess)
 
             # ----------------------------------------------------------------------
             if feedback is not None and feedback.split('->')[-1].strip() == 'GGGGG':
