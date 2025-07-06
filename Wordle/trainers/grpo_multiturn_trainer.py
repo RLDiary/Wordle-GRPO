@@ -605,17 +605,17 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         if self.accelerator.is_main_process and self.log_completions:
             
             # Logging only 1 in 10 steps using a random number generator
-            # if random.random() < 0.1:
+            if random.random() < 0.1:
                 # Disabling Rich print on the console to make that clean; Logs are available in WandB and Langfuse
-                # if is_rich_available():
-                #     print_prompt_completions_sample(
-                #         self._textual_logs["prompt"],
-                #         self._textual_logs["completion"],
-                #         self._textual_logs["rewards"],
-                #         self._textual_logs["advantages"],
-                #         self.state.global_step,
-                #         self.num_completions_to_print,
-                #     )
+                if is_rich_available():
+                    print_prompt_completions_sample(
+                        self._textual_logs["prompt"],
+                        self._textual_logs["completion"],
+                        self._textual_logs["rewards"],
+                        self._textual_logs["advantages"],
+                        self.state.global_step,
+                        self.num_completions_to_print,
+                    )
 
             if self.args.report_to and "wandb" in self.args.report_to and wandb.run is not None:
                 import pandas as pd

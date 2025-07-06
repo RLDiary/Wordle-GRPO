@@ -26,7 +26,7 @@ def shared_dataset(env, split: str, n_games: int):
     broadcast_object_list(payload, from_process=0)
     return payload[0]
 
-def main(model_name: str):
+def main(model_name: str, num_games: int):
     num_processes = 2
     run_name = f'A100-TestRuns-{date}-{time}'
     
@@ -35,7 +35,7 @@ def main(model_name: str):
     
     # Initialize Environment and Get Dataset
     env = W.WordleEnv()
-    train_dataset = shared_dataset(env, 'all', 10)
+    train_dataset = shared_dataset(env, 'all', num_games)
     print('Now waiting for everyone to finish...')
     accelerator.wait_for_everyone()
 
@@ -48,10 +48,10 @@ def main(model_name: str):
     
     # Saving Config
     training_args.save_strategy = "steps"
-    training_args.save_steps = 5
+    training_args.save_steps = 2
     training_args.output_dir = f"/workspace/Wordle-GRPO/Saved-Models/{run_name}"
     training_args.overwrite_output_dir = True
-    training_args.save_total_limit = 5
+    training_args.save_total_limit = 2
 
     # Evaluation Config
     training_args.eval_strategy = "no"
@@ -70,7 +70,7 @@ def main(model_name: str):
     # Batch Size Parameters
     training_args.per_device_train_batch_size = 5
     training_args.steps_per_generation = 1
-    training_args.max_steps=1000
+    training_args.max_steps=2000
     training_args.generation_batch_size = training_args.per_device_train_batch_size * num_processes * training_args.steps_per_generation
 
     
@@ -133,5 +133,6 @@ def main(model_name: str):
 
 if __name__ == "__main__":
     model_name = '/workspace/Models/Qwen2.5-7B-WORDLE-FineTune'
-    main(model_name=model_name)
+    num_games = 10
+    main(model_name=model_name, num_games=num_games)
 
