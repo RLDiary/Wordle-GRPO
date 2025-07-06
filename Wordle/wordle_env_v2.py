@@ -129,9 +129,9 @@ class WordleRubric:
                         continue
                     for letter, feedback_char in zip(guess, feedback_str):
                         if feedback_char == 'G':
-                            position_rewards[letter] = 0.2
+                            position_rewards[letter] = 0.12
                         elif feedback_char == 'Y':
-                            position_rewards[letter] = max(position_rewards[letter], 0.14)
+                            position_rewards[letter] = max(position_rewards[letter], 0.08)
                 reward = sum(position_rewards.values())
             
             rewards.append(reward)
