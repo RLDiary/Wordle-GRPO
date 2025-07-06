@@ -773,6 +773,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         if entropies is not None:
             mean_entropy = (entropies * completion_mask).sum() / completion_mask.sum().clamp(min=1.0)
             self._metrics[mode]["group_entropy_mean"].append(self.accelerator.gather(mean_entropy).nanmean().item())
-            self._metrics[mode]["group_entropy_std"].append(self.accelerator.gather(mean_entropy).nanstd().item())
+            gathered_mean_entropy = self.accelerator.gather(mean_entropy)
+            self._metrics[mode]["group_entropy_std"].append(nanstd(gathered_mean_entropy).item())
         
         return loss

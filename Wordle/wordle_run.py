@@ -28,9 +28,8 @@ def shared_dataset(env, split: str, n_games: int):
 
 def main(model_name: str):
     num_processes = 2
-    run_name = f'Initial-A5000-TestRuns-{date}-{time}'
+    run_name = f'A100-TestRuns-{date}-{time}'
     
-    print('Loading Model...')
     model, tokenizer = W.get_model_and_tokenizer(model_name)
     print('Model Loaded')
     
