@@ -101,7 +101,7 @@ class WordleRubric:
     def __init__(self, **kwargs):
         self.reward_funcs = [
             self.game_completion_reward,
-            self.format_score
+            self.format_correct_reward
             ]
         
         self.reward_weights = [1.0, 1.0]
@@ -116,7 +116,7 @@ class WordleRubric:
         rewards = []
         for trajectory in trajectories:
             reward = 0.0
-            if self.format_score([trajectory])[0] == 0.0:
+            if self.format_correct_reward([trajectory])[0] == 0.0:
                 reward = 0.0
             elif trajectory.solved:
                 reward = self.solved_score
@@ -137,7 +137,7 @@ class WordleRubric:
             rewards.append(reward)
         return rewards
 
-    def format_score(self, trajectories: List[Trajectory]) -> List[float]:
+    def format_correct_reward(self, trajectories: List[Trajectory]) -> List[float]:
         """
         Penalize trajectories that do not contain the <think> and <answer> tags
         """

@@ -27,7 +27,7 @@ def shared_dataset(env, split: str, n_games: int):
     return payload[0]
 
 def main(model_name: str):
-    
+    num_processes = 2
     run_name = f'Initial-A5000-TestRuns-{date}-{time}'
     
     print('Loading Model...')
@@ -36,11 +36,11 @@ def main(model_name: str):
     
     # Initialize Environment and Get Dataset
     env = W.WordleEnv()
-    train_dataset = shared_dataset(env, 'all', 1000)
+    train_dataset = shared_dataset(env, 'all', 10)
     print('Now waiting for everyone to finish...')
     accelerator.wait_for_everyone()
 
-    with_assist = True
+    with_assist = False
 
     # Initialize Training Arguments
     training_args = W.grpo_defaults(run_name=run_name)
@@ -49,7 +49,7 @@ def main(model_name: str):
     
     # Saving Config
     training_args.save_strategy = "steps"
-    training_args.save_steps = 250
+    training_args.save_steps = 5
     training_args.output_dir = f"/workspace/Wordle-GRPO/Saved-Models/{run_name}"
     training_args.overwrite_output_dir = True
     training_args.save_total_limit = 5
@@ -72,6 +72,7 @@ def main(model_name: str):
     training_args.per_device_train_batch_size = 5
     training_args.steps_per_generation = 1
     training_args.max_steps=1000
+    training_args.generation_batch_size = training_args.per_device_train_batch_size * num_processes * training_args.steps_per_generation
 
     
     # Max Length Parameters
