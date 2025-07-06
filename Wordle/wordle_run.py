@@ -28,7 +28,7 @@ def shared_dataset(env, split: str, n_games: int):
 
 def main(model_name: str, num_games: int):
     num_processes = 2
-    run_name = f'A100-TestRuns-{date}-{time}'
+    run_name = f'2XA100-TestRuns-{date}-{time}'
     
     model, tokenizer = W.get_model_and_tokenizer(model_name)
     print('Model Loaded')
@@ -48,10 +48,10 @@ def main(model_name: str, num_games: int):
     
     # Saving Config
     training_args.save_strategy = "steps"
-    training_args.save_steps = 2
+    training_args.save_steps = 250
     training_args.output_dir = f"/workspace/Wordle-GRPO/Saved-Models/{run_name}"
     training_args.overwrite_output_dir = True
-    training_args.save_total_limit = 1
+    training_args.save_total_limit = 2
 
     # Evaluation Config
     training_args.eval_strategy = "no"
@@ -75,8 +75,8 @@ def main(model_name: str, num_games: int):
 
     
     # Max Length Parameters
-    training_args.max_prompt_length = 4096
-    training_args.max_completion_length = 4096
+    training_args.max_prompt_length = 6144
+    training_args.max_completion_length = 2048
     
     
 
@@ -133,6 +133,6 @@ def main(model_name: str, num_games: int):
 
 if __name__ == "__main__":
     model_name = '/workspace/Models/Qwen2.5-7B-WORDLE-FineTune'
-    num_games = 10
+    num_games = 1000
     main(model_name=model_name, num_games=num_games)
 
