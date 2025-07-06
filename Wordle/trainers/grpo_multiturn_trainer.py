@@ -280,9 +280,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             peft_config: Optional["PeftConfig"] = None,
             debug: bool = False,
             run_name: str = "",
-            scale_rewards: bool = False,
-            loss_type: str = "bnpo",
-            multiplier_type: Optional[str] = None,
+            with_assist: bool = False,
             **kwargs,
     ):
         if not args.use_vllm: # type: ignore
@@ -307,6 +305,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         self.env = env
         self._eval_started = False
         self._train_started = False
+        self.with_assist = with_assist
         self.scale_rewards = args.scale_rewards
         self.loss_type = args.loss_type
 
@@ -380,7 +379,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             self.accelerator.wait_for_everyone()
         
         
-        if self.accelerator.is_main_process and global_fail.item() == self.accelerator.num_processes:
+        if self.accelerator.is_main_process and global_fail.item() == self.accelerator.num_processes and self.with_assist:
             with profiling_context(self, "Supervisor Completion"):
                 print("Initiating Supervision Completion (rank 0)")
                 supervisor_output = self.env.solve(

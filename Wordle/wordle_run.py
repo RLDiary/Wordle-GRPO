@@ -26,8 +26,8 @@ def shared_dataset(env, split: str, n_games: int):
     broadcast_object_list(payload, from_process=0)
     return payload[0]
 
-def main():
-    model_name = '/workspace/Models/Qwen2.5-7B-WORDLE-FineTune'
+def main(model_name: str):
+    
     run_name = f'Initial-A5000-TestRuns-{date}-{time}'
     
     print('Loading Model...')
@@ -40,9 +40,13 @@ def main():
     print('Now waiting for everyone to finish...')
     accelerator.wait_for_everyone()
 
+    with_assist = True
+
     # Initialize Training Arguments
     training_args = W.grpo_defaults(run_name=run_name)
 
+    
+    
     # Saving Config
     training_args.save_strategy = "steps"
     training_args.save_steps = 250
@@ -71,8 +75,8 @@ def main():
 
     
     # Max Length Parameters
-    training_args.max_prompt_length=4096
-    training_args.max_completion_length=4096
+    training_args.max_prompt_length = 4096
+    training_args.max_completion_length = 4096
     
     
 
@@ -81,6 +85,16 @@ def main():
     training_args.vllm_mode = 'colocate'
     training_args.vllm_gpu_memory_utilization = 0.4
     training_args.vllm_tensor_parallel_size = 1
+    training_args.generation_kwargs = {
+        "n": 1,
+        "temperature": 1.0,
+        "repetition_penalty": 1.0,
+        "frequency_penalty": 1.0,
+        "min_p": 0,
+        "top_p": 0.95,
+        "top_k": -1,
+        "max_tokens": 1024
+    }
     
     # Loss Config
     training_args.loss_type = 'cispo'
@@ -98,16 +112,7 @@ def main():
     rubric = W.WordleRubric()
     reward_funcs = rubric.get_reward_funcs()
     training_args.reward_weights = rubric.get_reward_weights()
-
-    # Generation Config
-    training_args.generation_kwargs = {
-        "temperature": 1.0,
-        "repetition_penalty": 1.0,
-        "min_p": 0.5,
-        "top_p": 0.95,
-        "top_k": 100,
-        "max_tokens": 1024
-    }
+    
 
     # Printing Completions
     training_args.num_completions_to_print = 0
@@ -119,6 +124,7 @@ def main():
         reward_funcs=reward_funcs,
         args=training_args,
         train_dataset=train_dataset,
+        with_assist=with_assist,
     )
 
     trainer.train()
@@ -126,5 +132,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    model_name = '/workspace/Models/Qwen2.5-7B-WORDLE-FineTune'
+    main(model_name=model_name)
 
