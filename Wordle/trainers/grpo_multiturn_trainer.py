@@ -794,6 +794,6 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         
         # Compute and log the KL divergence between the model and the old model
         kl_model_oldmodel = torch.exp(per_token_logps - old_per_token_logps) - (per_token_logps - old_per_token_logps) - 1
-        self._metrics[mode]["kl_model_old_mode"].append(kl_model_oldmodel.mean().item())
+        self._metrics[mode]["kl_model_oldmodel"].append(kl_model_oldmodel.mean().item())
         
         return loss
