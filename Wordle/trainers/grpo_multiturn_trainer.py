@@ -700,6 +700,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
     
     def _compute_loss(self, model, inputs):
         # Compute the per-token log probabilities for the model
+        mode = "train" if self.model.training else "eval"
         prompt_ids, prompt_mask = inputs["prompt_ids"], inputs["prompt_mask"]
         completion_ids, completion_mask = inputs["completion_ids"], inputs["completion_mask"]
         input_ids = torch.cat([prompt_ids, completion_ids], dim=1)
@@ -764,9 +765,6 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             loss = (per_token_loss * completion_mask).sum() / completion_mask.sum().clamp(min=1.0)
         else:
             raise ValueError(f"Unknown loss type: {self.loss_type}")
-
-        # Log the metrics
-        mode = "train" if self.model.training else "eval"
 
         if self.beta != 0.0:
             mean_kl = (per_token_kl * completion_mask).sum() / completion_mask.sum()

@@ -121,18 +121,19 @@ class WordleRubric:
             elif trajectory.solved:
                 reward = self.solved_score
             else:
-                position_rewards = {} # type: ignore
-                for char in trajectory.word:
-                    position_rewards[char] = 0.0
-                for guess, feedback_str in zip(trajectory.guesses, trajectory.feedback):
-                    if feedback_str == 'INVALID':
-                        continue
-                    for letter, feedback_char in zip(guess, feedback_str):
-                        if feedback_char == 'G':
-                            position_rewards[letter] = 0.12
-                        elif feedback_char == 'Y':
-                            position_rewards[letter] = max(position_rewards[letter], 0.08)
-                reward = sum(position_rewards.values())
+                reward = 0.0
+                # position_rewards = {} # type: ignore
+                # for char in trajectory.word:
+                #     position_rewards[char] = 0.0
+                # for guess, feedback_str in zip(trajectory.guesses, trajectory.feedback):
+                #     if feedback_str == 'INVALID':
+                #         continue
+                #     for letter, feedback_char in zip(guess, feedback_str):
+                #         if feedback_char == 'G':
+                #             position_rewards[letter] = 0.12
+                #         elif feedback_char == 'Y':
+                #             position_rewards[letter] = max(position_rewards[letter], 0.08)
+                # reward = sum(position_rewards.values())
             
             rewards.append(reward)
         return rewards
