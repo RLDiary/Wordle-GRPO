@@ -102,6 +102,12 @@ def main(model_name: str, num_games: int):
     training_args.use_liger_loss = False
     training_args.bf16_full_eval = True
     training_args.bf16 = True
+    # Low clip
+    training_args.epsilon = 0.05
+    # High clip
+    training_args.epsilon_high = 0.3
+    training_args.clip_advantages = True
+    training_args.advantage_clip_value = 2.0
     
     # Wandb Config
     training_args.report_to = 'wandb'

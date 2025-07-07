@@ -312,6 +312,9 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         self._initial_eval = True
         self.run_name = run_name
 
+        self.clip_advantages = args.clip_advantages
+        self.advantage_clip_value = args.advantage_clip_value
+
         # self.multiplier_type = multiplier_type
 
     def _generate_and_score_completions(
@@ -473,7 +476,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         # Compute grouped-wise rewards
         mean_grouped_rewards = rewards.view(-1, self.num_generations).mean(dim=1)
         std_grouped_rewards = rewards.view(-1, self.num_generations).std(dim=1)
-        is_std_zero = torch.isclose(std_grouped_rewards, torch.zeros_like(std_grouped_rewards))
+        is_std_zero = torch.isclose(std_grouped_rewards, torch.zeros_like(std_grouped_rewards), atol=1e-2)
 
         # Normalize the rewards to compute the advantages
         mean_grouped_rewards = mean_grouped_rewards.repeat_interleave(self.num_generations, dim=0)
@@ -705,6 +708,16 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
 
         # Compute the loss
         advantages = inputs["advantages"]
+        self._metrics[mode]["unclipped_advantages_mean"].append(advantages.mean().item())
+        self._metrics[mode]["unclipped_advantages_std"].append(advantages.std().item())
+        self._metrics[mode]["unclipped_advantages_min"].append(advantages.min().item())
+        self._metrics[mode]["unclipped_advantages_max"].append(advantages.max().item())
+
+        if self.clip_advantages:
+            advantages = torch.clamp(advantages, -self.advantage_clip_value, self.advantage_clip_value)
+            self._metrics[mode]["clipped_advantages_mean"].append(advantages.mean().item())
+            self._metrics[mode]["clipped_advantages_std"].append(advantages.std().item())
+
         # When using num_iterations == 1 and steps_per_generation <= gradient_accumulation_steps
         # old_per_token_logps == per_token_logps, so we can skip it's computation
         # (see _generate_and_score_completions) and use per_token_logps.detach() instead.
@@ -712,13 +725,12 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             per_token_logps.detach() if inputs["old_per_token_logps"] is None else inputs["old_per_token_logps"]
         )
         coef_1 = torch.exp(per_token_logps - old_per_token_logps)
+        coef_2 = torch.clamp(coef_1, 1 - self.epsilon_low, 1 + self.epsilon_high)
 
         if self.loss_type == "cispo":
-            clipped_is = torch.clamp(coef_1, 1 - self.epsilon_low, 1 + self.epsilon_high)
-            clipped_is_detached = clipped_is.detach()  #   sg(·)     —— Eq.(4)
+            clipped_is_detached = coef_2.detach()  #   sg(·)     —— Eq.(4)
             per_token_loss = -clipped_is_detached * advantages.unsqueeze(1) * per_token_logps
         else:
-            coef_2 = torch.clamp(coef_1, 1 - self.epsilon_low, 1 + self.epsilon_high)
             # Two-sided clipping
             if self.args.delta is not None:
                 coef_1 = torch.clamp(coef_1, max=self.args.delta)
@@ -775,5 +787,9 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             self._metrics[mode]["group_entropy_mean"].append(self.accelerator.gather(mean_entropy).nanmean().item())
             gathered_mean_entropy = self.accelerator.gather(mean_entropy)
             self._metrics[mode]["group_entropy_std"].append(nanstd(gathered_mean_entropy).item())
+        
+        # Compute and log the KL divergence between the model and the old model
+        kl_model_old_mode = torch.exp(per_token_logps - old_per_token_logps) - (per_token_logps - old_per_token_logps) - 1
+        self._metrics[mode]["kl_model_old_mode"].append(kl_model_old_mode.mean().item())
         
         return loss
