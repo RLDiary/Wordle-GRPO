@@ -59,18 +59,18 @@ def main(model_name: str, num_games: int):
 
     # Learning Rate, Beta and KL Divergence
     training_args.learning_rate = 1e-6
-    training_args.beta = 0.0
+    training_args.beta = 0.001
     training_args.sync_ref_model = False
     training_args.ref_model_mixup_alpha = 0.0
     
     # Training Config
     training_args.num_iterations=2
-    training_args.num_generations=10
+    training_args.num_generations=12
 
     # Batch Size Parameters
-    training_args.per_device_train_batch_size = 5
-    training_args.steps_per_generation = 1
-    training_args.max_steps=2000
+    training_args.per_device_train_batch_size = 6
+    training_args.steps_per_generation = 16
+    # training_args.max_steps=2000
     training_args.generation_batch_size = training_args.per_device_train_batch_size * num_processes * training_args.steps_per_generation
 
     
@@ -83,7 +83,7 @@ def main(model_name: str, num_games: int):
     # VLLM Config
     training_args.use_vllm = True
     training_args.vllm_mode = 'colocate'
-    training_args.vllm_gpu_memory_utilization = 0.4
+    training_args.vllm_gpu_memory_utilization = 0.3
     training_args.vllm_tensor_parallel_size = 1
     training_args.generation_kwargs = {
         "n": 1,
@@ -103,11 +103,11 @@ def main(model_name: str, num_games: int):
     training_args.bf16_full_eval = True
     training_args.bf16 = True
     # Low clip
-    training_args.epsilon = 0.05
+    training_args.epsilon = 0.15
     # High clip
-    training_args.epsilon_high = 0.3
+    training_args.epsilon_high = 0.2
     training_args.clip_advantages = True
-    training_args.advantage_clip_value = 2.0
+    training_args.advantage_clip_value = 3.0
     
     # Wandb Config
     training_args.report_to = 'wandb'
@@ -139,6 +139,6 @@ def main(model_name: str, num_games: int):
 
 if __name__ == "__main__":
     model_name = '/workspace/Models/Qwen2.5-7B-WORDLE-FineTune'
-    num_games = 1000
+    num_games = 1500
     main(model_name=model_name, num_games=num_games)
 

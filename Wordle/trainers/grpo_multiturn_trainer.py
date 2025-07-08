@@ -715,10 +715,6 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
 
         # Compute the loss
         advantages = inputs["advantages"]
-        self._metrics[mode]["unclipped_advantages_mean"].append(advantages.mean().item())
-        self._metrics[mode]["unclipped_advantages_std"].append(advantages.std().item())
-        self._metrics[mode]["unclipped_advantages_min"].append(advantages.min().item())
-        self._metrics[mode]["unclipped_advantages_max"].append(advantages.max().item())
 
         if self.clip_advantages:
             advantages = torch.clamp(advantages, -self.advantage_clip_value, self.advantage_clip_value)
@@ -750,50 +746,59 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
 
         if self.loss_type == "grpo":
             loss = ((per_token_loss * completion_mask).sum(-1) / completion_mask.sum(-1).clamp(min=1.0)).mean()
-        elif self.loss_type == "bnpo":
+        elif self.loss_type in ["bnpo", "cispo"]:
             loss = (per_token_loss * completion_mask).sum() / completion_mask.sum().clamp(min=1.0)
         elif self.loss_type == "dr_grpo":
             loss = (per_token_loss * completion_mask).sum() / (per_token_loss.size(0) * self.max_completion_length)
-        elif self.loss_type == "cispo":
-            loss = (per_token_loss * completion_mask).sum() / completion_mask.sum().clamp(min=1.0)
         else:
             raise ValueError(f"Unknown loss type: {self.loss_type}")
 
-        if self.beta != 0.0:
-            mean_kl = (per_token_kl * completion_mask).sum() / completion_mask.sum()
-            self._metrics[mode]["kl"].append(self.accelerator.gather(mean_kl).nanmean().item())
+        # *********** LOGGING ***********
 
-        # Compute the clipped probability ratios
-        if self.loss_type == "cispo":
-            is_low_clipped   = (coef_1 < 1 - self.epsilon_low)
-            is_high_clipped  = (coef_1 > 1 + self.epsilon_high)
-        else:
-            is_low_clipped = (coef_1 < 1 - self.epsilon_low) & (advantages.unsqueeze(1) < 0)
-            is_high_clipped = (coef_1 > 1 + self.epsilon_high) & (advantages.unsqueeze(1) > 0)
+        with torch.no_grad():
+            if self.beta != 0.0:
+                mean_kl = (per_token_kl * completion_mask).sum() / completion_mask.sum()
+                self._metrics[mode]["kl_ref_model"].append(self.accelerator.gather(mean_kl).nanmean().item())
+
+            # Compute the clipped probability ratios
+            if self.loss_type == "cispo":
+                is_low_clipped   = (coef_1 < 1 - self.epsilon_low)
+                is_high_clipped  = (coef_1 > 1 + self.epsilon_high)
+            else:
+                is_low_clipped = (coef_1 < 1 - self.epsilon_low) & (advantages.unsqueeze(1) < 0)
+                is_high_clipped = (coef_1 > 1 + self.epsilon_high) & (advantages.unsqueeze(1) > 0)
+                
+            is_region_clipped = is_low_clipped | is_high_clipped
+            low_clip = (is_low_clipped * completion_mask).sum() / completion_mask.sum()
+            high_clip = (is_high_clipped * completion_mask).sum() / completion_mask.sum()
+            clip_ratio = (is_region_clipped * completion_mask).sum() / completion_mask.sum()
+
+            gathered_low_clip = self.accelerator.gather(low_clip)
+            self._metrics[mode]["clip_ratio/low_mean"].append(gathered_low_clip.nanmean().item())
+            self._metrics[mode]["clip_ratio/low_min"].append(nanmin(gathered_low_clip).item())
+            gathered_high_clip = self.accelerator.gather(high_clip)
+            self._metrics[mode]["clip_ratio/high_mean"].append(gathered_high_clip.nanmean().item())
+            self._metrics[mode]["clip_ratio/high_max"].append(nanmax(gathered_high_clip).item())
+            gathered_clip_ratio = self.accelerator.gather(clip_ratio)
+            self._metrics[mode]["clip_ratio/region_mean"].append(gathered_clip_ratio.nanmean().item())
+
+            # Compute and log average entropy for unmasked completion tokens
+            if entropies is not None:
+                mean_entropy = (entropies * completion_mask).sum() / completion_mask.sum().clamp(min=1.0)
+                gathered_mean_entropy = self.accelerator.gather(mean_entropy)
+                self._metrics[mode]["group_entropy_mean"].append(gathered_mean_entropy.nanmean().item())
+                self._metrics[mode]["group_entropy_std"].append(nanstd(gathered_mean_entropy).item())
             
-        is_region_clipped = is_low_clipped | is_high_clipped
-        low_clip = (is_low_clipped * completion_mask).sum() / completion_mask.sum()
-        high_clip = (is_high_clipped * completion_mask).sum() / completion_mask.sum()
-        clip_ratio = (is_region_clipped * completion_mask).sum() / completion_mask.sum()
+            # Compute and log the KL divergence between the model and the old model
+            kl_model_oldmodel = torch.exp(per_token_logps - old_per_token_logps) - (per_token_logps - old_per_token_logps) - 1
+            max_abs_diff_logps = torch.max(torch.abs(per_token_logps - old_per_token_logps), dim=1).values
+            self._metrics[mode]["kl_model_oldmodel"].append(self.accelerator.gather(kl_model_oldmodel).nanmean().item())
+            self._metrics[mode]['importance_sampling_ratio_mean'].append(self.accelerator.gather(coef_1).nanmean().item())
+            self._metrics[mode]['max_abs_diff_logps_mean'].append(self.accelerator.gather(max_abs_diff_logps).nanmean().item())
+            self._metrics[mode]['max_abs_diff_logps_max'].append(nanmax(self.accelerator.gather(max_abs_diff_logps)).item())
 
-        gathered_low_clip = self.accelerator.gather(low_clip)
-        self._metrics[mode]["clip_ratio/low_mean"].append(gathered_low_clip.nanmean().item())
-        self._metrics[mode]["clip_ratio/low_min"].append(nanmin(gathered_low_clip).item())
-        gathered_high_clip = self.accelerator.gather(high_clip)
-        self._metrics[mode]["clip_ratio/high_mean"].append(gathered_high_clip.nanmean().item())
-        self._metrics[mode]["clip_ratio/high_max"].append(nanmax(gathered_high_clip).item())
-        gathered_clip_ratio = self.accelerator.gather(clip_ratio)
-        self._metrics[mode]["clip_ratio/region_mean"].append(gathered_clip_ratio.nanmean().item())
-
-        # Compute and log average entropy for unmasked completion tokens
-        if entropies is not None:
-            mean_entropy = (entropies * completion_mask).sum() / completion_mask.sum().clamp(min=1.0)
-            gathered_mean_entropy = self.accelerator.gather(mean_entropy)
-            self._metrics[mode]["group_entropy_mean"].append(gathered_mean_entropy.nanmean().item())
-            self._metrics[mode]["group_entropy_std"].append(nanstd(gathered_mean_entropy).item())
-        
-        # Compute and log the KL divergence between the model and the old model
-        kl_model_oldmodel = torch.exp(per_token_logps - old_per_token_logps) - (per_token_logps - old_per_token_logps) - 1
-        self._metrics[mode]["kl_model_oldmodel"].append(kl_model_oldmodel.mean().item())
+        # Consider setting the loss to 0 if the importance sampling ratio is too high
+        # if self.accelerator.gather(coef_1).nanmean().item() > 10:
+        #     loss = torch.zeros_like(loss)
         
         return loss
