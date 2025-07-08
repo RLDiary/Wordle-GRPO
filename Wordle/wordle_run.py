@@ -66,12 +66,15 @@ def main(model_name: str, num_games: int):
     # Training Config
     training_args.num_iterations=2
     training_args.num_generations=12
+    training_args.max_grad_norm = 0.1 # Also controlled in DeepSpeed Config as gradient_clipping
 
     # Batch Size Parameters
-    training_args.per_device_train_batch_size = 6
-    training_args.steps_per_generation = 16
+    training_args.per_device_train_batch_size = 6 # Also controlled in DeepSpeed Config as train_micro_batch_size_per_gpu
+    training_args.steps_per_generation = 1
+    training_args.gradient_accumulation_steps = 16 # Also controlled in DeepSpeed Config as gradient_accumulation_steps
     # training_args.max_steps=2000
     training_args.generation_batch_size = training_args.per_device_train_batch_size * num_processes * training_args.steps_per_generation
+    training_args.training_batch_size = training_args.per_device_train_batch_size * num_processes * training_args.gradient_accumulation_steps
 
     
     # Max Length Parameters

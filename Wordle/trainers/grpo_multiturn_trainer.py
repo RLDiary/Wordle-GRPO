@@ -792,10 +792,10 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             # Compute and log the KL divergence between the model and the old model
             kl_model_oldmodel = torch.exp(per_token_logps - old_per_token_logps) - (per_token_logps - old_per_token_logps) - 1
             max_abs_diff_logps = torch.max(torch.abs(per_token_logps - old_per_token_logps), dim=1).values
-            self._metrics[mode]["kl_model_oldmodel"].append(self.accelerator.gather(kl_model_oldmodel).nanmean().item())
-            self._metrics[mode]['importance_sampling_ratio_mean'].append(self.accelerator.gather(coef_1).nanmean().item())
-            self._metrics[mode]['max_abs_diff_logps_mean'].append(self.accelerator.gather(max_abs_diff_logps).nanmean().item())
-            self._metrics[mode]['max_abs_diff_logps_max'].append(nanmax(self.accelerator.gather(max_abs_diff_logps)).item())
+            self._metrics[mode]["kl_model_oldmodel"].append(kl_model_oldmodel.nanmean().item())
+            self._metrics[mode]['importance_sampling_ratio_mean'].append(coef_1.nanmean().item())
+            self._metrics[mode]['max_abs_diff_logps_mean'].append(max_abs_diff_logps.nanmean().item())
+            self._metrics[mode]['max_abs_diff_logps_max'].append(nanmax(max_abs_diff_logps).item())
 
         # Consider setting the loss to 0 if the importance sampling ratio is too high
         # if self.accelerator.gather(coef_1).nanmean().item() > 10:

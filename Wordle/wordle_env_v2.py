@@ -147,7 +147,11 @@ class WordleRubric:
             reward = self.format_score
             for message in trajectory.messages:
                 if message['role'] == 'user':
-                    continue
+                    if "Invalid word" in message['content']:
+                        reward = 0.0
+                        break
+                    else:
+                        continue
                 if '<think>' not in message['content'] or '</think>' not in message['content']:
                     reward = 0.0
                     break
