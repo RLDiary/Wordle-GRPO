@@ -342,7 +342,7 @@ class WordleEnv:
             trajectory.guesses.append(guess)
 
             # ----------------------------------------------------------------------
-            if feedback is not None and feedback.split('\n')[1].split('->')[-1].strip() == 'GGGGG':
+            if feedback is not None and not feedback.startswith('Invalid') and feedback.split('\n')[1].split('->')[-1].strip() == 'GGGGG':
                 trajectory.solved = True
                 trajectory.messages[-1]['content'] = f'Success! You found the word {trajectory.word} in {trajectory.num_turns} turns.'
                 trajectory.game_completed = True
