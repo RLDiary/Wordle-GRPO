@@ -101,12 +101,14 @@ class WordleRubric:
     def __init__(self, **kwargs):
         self.reward_funcs = [
             self.game_completion_reward,
-            self.format_correct_reward
+            self.format_correct_reward,
+            self.valid_words_reward
             ]
         
-        self.reward_weights = [1.0, 1.0]
+        self.reward_weights = [1.0, 1.0, 1.0]
         
-        self.format_score = 0.1
+        self.format_score = 0.05
+        self.valid_words_score = 0.15
         self.solved_score = 1.0
     
     def game_completion_reward(self, trajectories: List[Trajectory]) -> List[float]:
@@ -115,29 +117,27 @@ class WordleRubric:
         """
         rewards = []
         for trajectory in trajectories:
-            reward = 0.0
-            if self.format_correct_reward([trajectory])[0] == 0.0:
-                reward = 0.0
-            elif trajectory.solved:
+            if trajectory.solved:
                 reward = self.solved_score
             else:
                 reward = 0.0
-                # position_rewards = {} # type: ignore
-                # for char in trajectory.word:
-                #     position_rewards[char] = 0.0
-                # for guess, feedback_str in zip(trajectory.guesses, trajectory.feedback):
-                #     if feedback_str == 'INVALID':
-                #         continue
-                #     for letter, feedback_char in zip(guess, feedback_str):
-                #         if feedback_char == 'G':
-                #             position_rewards[letter] = 0.12
-                #         elif feedback_char == 'Y':
-                #             position_rewards[letter] = max(position_rewards[letter], 0.08)
-                # reward = sum(position_rewards.values())
-            
             rewards.append(reward)
         return rewards
 
+    def valid_words_reward(self, trajectories: List[Trajectory]) -> List[float]:
+        """
+        Reward Function for Valid Words
+        """
+        rewards = []
+        for trajectory in trajectories:
+            reward = self.valid_words_score
+            for feedback in trajectory.feedback:
+                if feedback == 'INVALID':
+                    reward = 0.0
+                    break
+            rewards.append(reward)
+        return rewards
+    
     def format_correct_reward(self, trajectories: List[Trajectory]) -> List[float]:
         """
         Penalize trajectories that do not contain the <think> and <answer> tags
@@ -147,11 +147,8 @@ class WordleRubric:
             reward = self.format_score
             for message in trajectory.messages:
                 if message['role'] == 'user':
-                    if "Invalid word" in message['content']:
-                        reward = 0.0
-                        break
-                    else:
-                        continue
+                    continue    
+                
                 if '<think>' not in message['content'] or '</think>' not in message['content']:
                     reward = 0.0
                     break

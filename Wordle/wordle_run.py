@@ -48,7 +48,7 @@ def main(model_name: str, num_games: int):
     
     # Saving Config
     training_args.save_strategy = "steps"
-    training_args.save_steps = 250
+    training_args.save_steps = 50
     training_args.output_dir = f"/workspace/Wordle-GRPO/Saved-Models/{run_name}"
     training_args.overwrite_output_dir = True
     training_args.save_total_limit = 2
@@ -142,6 +142,6 @@ def main(model_name: str, num_games: int):
 
 if __name__ == "__main__":
     model_name = '/workspace/Models/Qwen2.5-7B-WORDLE-FineTune'
-    num_games = 1500
+    num_games = 2300
     main(model_name=model_name, num_games=num_games)
 
