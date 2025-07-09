@@ -48,7 +48,7 @@ def main(model_name: str, num_games: int):
     
     # Saving Config
     training_args.save_strategy = "steps"
-    training_args.save_steps = 50
+    training_args.save_steps = 25
     training_args.output_dir = f"/workspace/Wordle-GRPO/Saved-Models/{run_name}"
     training_args.overwrite_output_dir = True
     training_args.save_total_limit = 2

@@ -503,8 +503,6 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
         if mode == "train":
             self.state.num_input_tokens_seen += self.accelerator.gather(attention_mask.sum()).sum().item()
         self._metrics[mode]["num_tokens"] = [self.state.num_input_tokens_seen]
-        if self.accelerator.is_main_process:
-            self._metrics[mode]["assisted_completions"].append(self.assisted_completions)
 
         # Log completion lengths, mean, min, max
         agg_completion_lengths = self.accelerator.gather(completion_lengths)
@@ -768,19 +766,19 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
                 is_low_clipped = (coef_1 < 1 - self.epsilon_low) & (advantages.unsqueeze(1) < 0)
                 is_high_clipped = (coef_1 > 1 + self.epsilon_high) & (advantages.unsqueeze(1) > 0)
                 
-            is_region_clipped = is_low_clipped | is_high_clipped
+            # is_region_clipped = is_low_clipped | is_high_clipped
             low_clip = (is_low_clipped * completion_mask).sum() / completion_mask.sum()
             high_clip = (is_high_clipped * completion_mask).sum() / completion_mask.sum()
-            clip_ratio = (is_region_clipped * completion_mask).sum() / completion_mask.sum()
+            # clip_ratio = (is_region_clipped * completion_mask).sum() / completion_mask.sum()
 
             gathered_low_clip = self.accelerator.gather(low_clip)
             self._metrics[mode]["clip_ratio/low_mean"].append(gathered_low_clip.nanmean().item())
-            self._metrics[mode]["clip_ratio/low_min"].append(nanmin(gathered_low_clip).item())
+            # self._metrics[mode]["clip_ratio/low_min"].append(nanmin(gathered_low_clip).item())
             gathered_high_clip = self.accelerator.gather(high_clip)
             self._metrics[mode]["clip_ratio/high_mean"].append(gathered_high_clip.nanmean().item())
-            self._metrics[mode]["clip_ratio/high_max"].append(nanmax(gathered_high_clip).item())
-            gathered_clip_ratio = self.accelerator.gather(clip_ratio)
-            self._metrics[mode]["clip_ratio/region_mean"].append(gathered_clip_ratio.nanmean().item())
+            # self._metrics[mode]["clip_ratio/high_max"].append(nanmax(gathered_high_clip).item())
+            # gathered_clip_ratio = self.accelerator.gather(clip_ratio)
+            # self._metrics[mode]["clip_ratio/region_mean"].append(gathered_clip_ratio.nanmean().item())
 
             # Compute and log average entropy for unmasked completion tokens
             if entropies is not None:
@@ -789,16 +787,7 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
                 self._metrics[mode]["group_entropy_mean"].append(gathered_mean_entropy.nanmean().item())
                 self._metrics[mode]["group_entropy_std"].append(nanstd(gathered_mean_entropy).item())
             
-            # Compute and log the KL divergence between the model and the old model
-            kl_model_oldmodel = torch.exp(per_token_logps - old_per_token_logps) - (per_token_logps - old_per_token_logps) - 1
-            max_abs_diff_logps = torch.max(torch.abs(per_token_logps - old_per_token_logps), dim=1).values
-            self._metrics[mode]["kl_model_oldmodel"].append(kl_model_oldmodel.nanmean().item())
+            
             self._metrics[mode]['importance_sampling_ratio_mean'].append(coef_1.nanmean().item())
-            self._metrics[mode]['max_abs_diff_logps_mean'].append(max_abs_diff_logps.nanmean().item())
-            self._metrics[mode]['max_abs_diff_logps_max'].append(nanmax(max_abs_diff_logps).item())
-
-        # Consider setting the loss to 0 if the importance sampling ratio is too high
-        # if self.accelerator.gather(coef_1).nanmean().item() > 10:
-        #     loss = torch.zeros_like(loss)
         
         return loss
