@@ -234,11 +234,11 @@ class WordleEnv:
                 response_text += f'{alphabet} is not in the word.\n'
         return f"{guess} -> {response}"
     
-    def get_dataset(self, dataset: str = 'train', number_of_games: Optional[int] = None):
+    def get_dataset(self, dataset: str = 'all', number_of_games: Optional[int] = None):
         if dataset == 'train':
             word_dicts = random.sample([word.model_dump() for word in TRAIN_WORDS], number_of_games)
             return Dataset.from_list(word_dicts)
-        word_dicts = random.sample([word.model_dump() for word in ALL_WORDS], number_of_games)
+        word_dicts = [word.model_dump() for word in ALL_WORDS]
         return Dataset.from_list(word_dicts)
 
     def _agent_completion(self, messages: List[List[Dict[str, Any]]], llm: LLM, sampling_params: SamplingParams):
@@ -381,7 +381,7 @@ class WordleEnv:
         
         all_games_completed = False
         words = [t.word for t in trajectories]
-        print(f'Now attempting to solve the wordle game with the words {words} and assist is {assist}')
+        
         while not all_games_completed:
             trajectories = self.play(tokenizer, trajectories, llm, custom_sp, training, assist)
             all_games_completed = all(trajectory.game_completed for trajectory in trajectories)

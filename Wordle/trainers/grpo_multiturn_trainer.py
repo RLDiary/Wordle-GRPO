@@ -327,7 +327,11 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
 
 
         all_words = [x['word'] for x in inputs]
+        occurence = [x['occurrence'] for x in inputs]
+        # Print Average Occurence
         print('Words in the device:', self.accelerator.device, 'are:', all_words)
+        print('Average Occurence:', sum(occurence) / len(occurence))
+        self._metrics[mode]["average_occurence"].append(sum(occurence) / len(occurence))
         
         T = [Trajectory(word = x["word"], word_hash = x["hash"], messages = copy.deepcopy(self.env.messages_template)) for x in inputs]
         
@@ -649,7 +653,6 @@ class GRPOMultiTurnTrainer(GRPOTrainer):
             unwrapped_model = self.accelerator.unwrap_model(model)
             return self._forward_redirection(model, unwrapped_model, self.compute_liger_loss, unwrapped_model, inputs)
         else:
-            print("Using local GRPO Trainer Loss")
             return self._compute_loss(model, inputs)
 
     

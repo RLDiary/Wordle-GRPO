@@ -44,7 +44,8 @@ def main(model_name: str, num_games: int):
     # Initialize Training Arguments
     training_args = W.grpo_defaults(run_name=run_name)
 
-    
+    # Dataset Config
+    training_args.shuffle_dataset = False
     
     # Saving Config
     training_args.save_strategy = "steps"
