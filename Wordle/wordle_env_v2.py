@@ -221,18 +221,26 @@ class WordleEnv:
             return "Invalid word, not a 5 letter word"
         
         response = ""
-        response_text = ""
+        response_text = f"Your Guess: {guess}\nFeedback:\n"
         for i, alphabet in enumerate(guess):
+            response_text += f'Position {i+1}: '
             if word[i] == alphabet:
                 response += "G"
-                response_text += f'{alphabet} is in the word and in the correct position.\n'
+                response_text += f'{alphabet}->{response[-1]} '
+                response_text += f'(The letter {alphabet} is in the word and in the correct position.)\n'
             elif alphabet in word:
                 response += "Y"
-                response_text += f'{alphabet} is in the word but in the wrong position.\n'
+                response_text += f'{alphabet}->{response[-1]} '
+                response_text += f'(The letter {alphabet} is in the word but in the wrong position.)\n'
             else:
                 response += "B"
-                response_text += f'{alphabet} is not in the word.\n'
-        return f"{guess} -> {response}"
+                response_text += f'{alphabet}->{response[-1]} '
+                response_text += f'(The letter {alphabet} is not in the word.)\n'
+             
+        response_text = response_text.split("\n")
+        response_text[1] = f'Feedback: {guess} -> {response}'
+        response_text = "\n".join(response_text)
+        return response_text
     
     def get_dataset(self, dataset: str = 'all', number_of_games: Optional[int] = None):
         if dataset == 'train':
@@ -322,7 +330,7 @@ class WordleEnv:
                 feedback = self.get_feedback(guess, trajectory.word)
                 trajectory.messages.append({'role': 'user', 'content': feedback})
                 if not feedback.startswith('Invalid'):
-                    trajectory.feedback.append(feedback.split('->')[-1].strip())
+                    trajectory.feedback.append(feedback.split('\n')[1].split('->')[-1].strip())
                 else:
                     trajectory.feedback.append('INVALID')
             else:
@@ -334,7 +342,7 @@ class WordleEnv:
             trajectory.guesses.append(guess)
 
             # ----------------------------------------------------------------------
-            if feedback is not None and feedback.split('->')[-1].strip() == 'GGGGG':
+            if feedback is not None and feedback.split('\n')[1].split('->')[-1].strip() == 'GGGGG':
                 trajectory.solved = True
                 trajectory.messages[-1]['content'] = f'Success! You found the word {trajectory.word} in {trajectory.num_turns} turns.'
                 trajectory.game_completed = True
