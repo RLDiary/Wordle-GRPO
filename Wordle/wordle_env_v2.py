@@ -108,7 +108,7 @@ class WordleRubric:
         self.reward_weights = [1.0, 1.0, 1.0]
         
         self.format_score = 0.05
-        self.valid_words_score = 0.15
+        self.valid_words_score = 0.25
         self.solved_score = 1.0
     
     def game_completion_reward(self, trajectories: List[Trajectory]) -> List[float]:
