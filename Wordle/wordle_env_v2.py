@@ -108,8 +108,8 @@ class WordleRubric:
         self.reward_weights = [1.0, 1.0, 1.0]
         
         self.format_score = 0.05
-        self.valid_words_score = 0.25
-        self.solved_score = 1.0
+        self.valid_words_score = 0.2
+        self.solved_score = 0.75
     
     def game_completion_reward(self, trajectories: List[Trajectory]) -> List[float]:
         """
@@ -117,7 +117,7 @@ class WordleRubric:
         """
         rewards = []
         for trajectory in trajectories:
-            if trajectory.solved:
+            if self.valid_words_reward([trajectory])[0] != 0.0 and self.format_correct_reward([trajectory])[0] != 0.0 and trajectory.solved:
                 reward = self.solved_score
             else:
                 reward = 0.0
@@ -130,11 +130,14 @@ class WordleRubric:
         """
         rewards = []
         for trajectory in trajectories:
-            reward = self.valid_words_score
-            for feedback in trajectory.feedback:
-                if feedback == 'INVALID':
-                    reward = 0.0
-                    break
+            if self.format_correct_reward([trajectory])[0] == 0.0:
+                reward = 0.0
+            else:
+                reward = self.valid_words_score
+                for feedback in trajectory.feedback:
+                    if feedback == 'INVALID':
+                        reward = 0.0
+                        break
             rewards.append(reward)
         return rewards
     
@@ -148,7 +151,6 @@ class WordleRubric:
             for message in trajectory.messages:
                 if message['role'] == 'user':
                     continue    
-                
                 if '<think>' not in message['content'] or '</think>' not in message['content']:
                     reward = 0.0
                     break
@@ -333,6 +335,7 @@ class WordleEnv:
                     trajectory.feedback.append(feedback.split('\n')[1].split('->')[-1].strip())
                 else:
                     trajectory.feedback.append('INVALID')
+                    trajectory.game_completed = True
             else:
                 trajectory.messages.append({'role': 'user', 'content': f'Invalid format, stick to the <think>, </think> and <answer>, </answer> tags provided in the system prompt'})
                 guess = 'INVALID'

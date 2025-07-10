@@ -61,16 +61,17 @@ def main(model_name: str, num_games: int):
     # Learning Rate, Beta and KL Divergence
     training_args.learning_rate = 1e-6
     training_args.beta = 0.001
-    training_args.sync_ref_model = False
-    training_args.ref_model_mixup_alpha = 0.0
+    training_args.sync_ref_model = True
+    training_args.ref_model_sync_steps = 50
+    training_args.ref_model_mixup_alpha = 0.6
     
     # Training Config
-    training_args.num_iterations=2
-    training_args.num_generations=12
+    training_args.num_iterations=1
+    training_args.num_generations=16
     training_args.max_grad_norm = 0.2 # Also controlled in DeepSpeed Config as gradient_clipping
 
     # Batch Size Parameters
-    training_args.per_device_train_batch_size = 6 # Also controlled in DeepSpeed Config as train_micro_batch_size_per_gpu
+    training_args.per_device_train_batch_size = 8 # Also controlled in DeepSpeed Config as train_micro_batch_size_per_gpu
     training_args.steps_per_generation = 1
     training_args.gradient_accumulation_steps = 16 # Also controlled in DeepSpeed Config as gradient_accumulation_steps
     # training_args.max_steps=2000
@@ -87,7 +88,7 @@ def main(model_name: str, num_games: int):
     # VLLM Config
     training_args.use_vllm = True
     training_args.vllm_mode = 'colocate'
-    training_args.vllm_gpu_memory_utilization = 0.3
+    training_args.vllm_gpu_memory_utilization = 0.35
     training_args.vllm_tensor_parallel_size = 1
     training_args.generation_kwargs = {
         "n": 1,
