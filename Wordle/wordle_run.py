@@ -27,8 +27,8 @@ def shared_dataset(env, split: str, n_games: int):
     return payload[0]
 
 def main(model_name: str, num_games: int):
-    num_processes = 2
-    run_name = f'2XA100-TestRuns-{date}-{time}'
+    num_processes = 3 # Also controlled in DeepSpeed Config as num_processes
+    run_name = f'3XA100-TestRuns-{date}-{time}'
     
     model, tokenizer = W.get_model_and_tokenizer(model_name)
     print('Model Loaded')
@@ -67,7 +67,7 @@ def main(model_name: str, num_games: int):
     
     # Training Config
     training_args.num_iterations=1
-    training_args.num_generations=12
+    training_args.num_generations=18
     training_args.max_grad_norm = 0.2 # Also controlled in DeepSpeed Config as gradient_clipping
 
     # Batch Size Parameters
