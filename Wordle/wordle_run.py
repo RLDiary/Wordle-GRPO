@@ -12,21 +12,17 @@ import datetime
 date = datetime.datetime.now().strftime("%d-%m")
 time = datetime.datetime.now().strftime("%H-%M")
 
-def shared_dataset(env, split: str, n_games: int):
-    """
-    • Rank-0 samples the games           (any RNG is confined to that process)
-    • The list is broadcast to all ranks (deterministic without touching seeds)
-    """
+def shared_dataset(env, split: str, n_games: int, eval_games: int):
     if accelerator.is_main_process:           # rank-0
-        data = env.get_dataset(split, n_games)
-        payload = [data]
+        train_dataset, eval_dataset = env.get_dataset(split, n_games, eval_games)
+        payload = [train_dataset, eval_dataset]
     else:                                     # all other ranks
-        payload = [None]
+        payload = [None, None]
 
     broadcast_object_list(payload, from_process=0)
-    return payload[0]
+    return payload[0], payload[1]
 
-def main(model_name: str, num_games: int):
+def main(model_name: str, train_games: int, eval_games: int):
     num_processes = 3 # Also controlled in DeepSpeed Config as num_processes
     run_name = f'3XA100-TestRuns-{date}-{time}'
     
@@ -35,7 +31,7 @@ def main(model_name: str, num_games: int):
     
     # Initialize Environment and Get Dataset
     env = W.WordleEnv()
-    train_dataset = shared_dataset(env, 'all', num_games)
+    train_dataset, eval_dataset = shared_dataset(env, 'all', train_games, eval_games)
     print('Now waiting for everyone to finish...')
     accelerator.wait_for_everyone()
 
@@ -55,8 +51,10 @@ def main(model_name: str, num_games: int):
     training_args.save_total_limit = 2
 
     # Evaluation Config
-    training_args.eval_strategy = "no"
-    # training_args.per_device_eval_batch_size = 4
+    training_args.eval_strategy = "steps"
+    training_args.eval_steps = 25
+    training_args.eval_dataset = eval_dataset
+    training_args.per_device_eval_batch_size = 6
 
     # Learning Rate, Beta and KL Divergence
     training_args.learning_rate = 1e-6
@@ -69,6 +67,7 @@ def main(model_name: str, num_games: int):
     training_args.num_iterations=1
     training_args.num_generations=18
     training_args.max_grad_norm = 0.2 # Also controlled in DeepSpeed Config as gradient_clipping
+    training_args.num_train_epochs = 3
 
     # Batch Size Parameters
     training_args.per_device_train_batch_size = 6 # Also controlled in DeepSpeed Config as train_micro_batch_size_per_gpu
@@ -135,6 +134,7 @@ def main(model_name: str, num_games: int):
         reward_funcs=reward_funcs,
         args=training_args,
         train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         with_assist=with_assist,
     )
 
@@ -144,6 +144,7 @@ def main(model_name: str, num_games: int):
 
 if __name__ == "__main__":
     model_name = '/workspace/Models/Qwen2.5-7B-WORDLE-FineTune'
-    num_games = 2300
-    main(model_name=model_name, num_games=num_games)
+    train_games = 1000
+    eval_games = 102
+    main(model_name=model_name, train_games=train_games, eval_games=eval_games)
 

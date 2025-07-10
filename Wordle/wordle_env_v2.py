@@ -244,12 +244,11 @@ class WordleEnv:
         response_text = "\n".join(response_text)
         return response_text
     
-    def get_dataset(self, dataset: str = 'all', number_of_games: Optional[int] = None):
-        if dataset == 'train':
-            word_dicts = random.sample([word.model_dump() for word in TRAIN_WORDS], number_of_games)
-            return Dataset.from_list(word_dicts)
-        word_dicts = [word.model_dump() for word in ALL_WORDS]
-        return Dataset.from_list(word_dicts)
+    def get_dataset(self, dataset: str = 'all', number_of_games: Optional[int] = None, eval_games: Optional[int] = None):
+        all_words = [word.model_dump() for word in ALL_WORDS]
+        word_dicts = all_words[:number_of_games]
+        eval_dicts = all_words[number_of_games:number_of_games+eval_games]
+        return Dataset.from_list(word_dicts), Dataset.from_list(eval_dicts)
 
     def _agent_completion(self, messages: List[List[Dict[str, Any]]], llm: LLM, sampling_params: SamplingParams):
         agent_responses = llm.chat(messages, sampling_params=sampling_params, use_tqdm=False)
