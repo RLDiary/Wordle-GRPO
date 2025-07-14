@@ -1,4 +1,4 @@
-# Wordle-GRPO - A $100 Agent ([Read more about the $100 Agents Project](https://www.rldiary.com/p/the-100-agents))
+# Wordle-GRPO - ([A $100 Agent](https://www.rldiary.com/p/the-100-agents))
 
 ## **Experience the magic of Reinforcement Learning for $25.**
 
