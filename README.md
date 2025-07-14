@@ -25,7 +25,7 @@ Wordle-GRPO is a reinforcement learning training loop built on top of **Transfor
 The best training run 3X the performance of the supervised fine-tuned model from 4.5% accuracy to 14.5% demonstrating a full 10% improvement after 35 steps.
 This roughly corresponds to about 5 hours of training time with 3 x A100s = $25 of training compute at current prices (14 July 2025)
 
-![Best Training Run - Run 6](Images/Best Training Run 6 - Final.png)
+![Best Training Run - Run 6](Images/Best%20Training%20Run%206%20-%20Final.png)
 ---
 
 ## 📌 Prerequisites
