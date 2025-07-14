@@ -55,7 +55,8 @@ One of the persistent issues we faced with Qwen-2.5-7B SFT was the model *VERY* 
 
 ## 📌 Prerequisites
 
-- Ubuntu 22.04 Virtual Machine (VM).
+- Ubuntu 22.04 Virtual Machine (VM). Runpod offers excellent value. Sign up through my referral link so we can both get a random credit bonus [here](https://runpod.io?ref=y7igab3g)
+- Pytorch 2.8, Cuda 12.8.1
 - Basic familiarity with Linux terminal commands.
 - A **GitHub account** to clone the repository and download models.
 - A **Hugging Face account** to access pre-trained models.
