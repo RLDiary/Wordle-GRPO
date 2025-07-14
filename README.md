@@ -1,63 +1,220 @@
 # Wordle-GRPO
 
-Here is a step by step instruction to get started on a new Virtual Machine using Ubuntu 22.4, Pytorch 12.8
+This guide provides step-by-step instructions to set up **Wordle-GRPO** on a **new Ubuntu 22.04 Virtual Machine** with **PyTorch 1.12.8**.
 
-apt-get update
-<!-- Libenchant C compiler is required for Pyenchant -->
-apt install libenchant-2-dev -y
-<!-- Bashtop, nvtop and tmux to support monitoring the system performance -->
-apt install bashtop -y
-apt install nvtop -y
-apt install tmux -y
+---
 
-<!-- Set up Git -->
-apt-get install git gh -y
-git config --global user.name "YPUR NAME"
+## 📌 Prerequisites
+
+- Ubuntu 22.04 Virtual Machine (VM).
+- Basic familiarity with Linux terminal commands.
+- A **GitHub account** to clone the repository and download models.
+- A **Hugging Face account** to access pre-trained models.
+
+---
+
+## ✅ Step 1: Update System Packages
+
+```bash
+sudo apt-get update
+```
+
+---
+
+## ✅ Step 2: Install Dependencies
+
+### Essential libraries for compilation:
+
+```bash
+sudo apt install libenchant-2-dev -y
+```
+
+### System monitoring tools (optional but recommended):
+
+```bash
+sudo apt install bashtop -y
+sudo apt install nvtop -y
+sudo apt install tmux -y
+```
+
+---
+
+## ✅ Step 3: Set Up Git and GitHub SSH
+
+### Install Git and GitHub CLI:
+
+```bash
+sudo apt-get install git gh -y
+```
+
+### Configure Git (replace with your details):
+
+```bash
+git config --global user.name "YOUR NAME"
 git config --global user.email "YOUR EMAIL"
-ssh-keygen -t rsa -b 4096 -C "YOUR EMAIL"
+```
 
-<!-- Make sure to create the SSH key in Github -->
+### Generate an SSH key:
+
+```bash
+ssh-keygen -t rsa -b 4096 -C "YOUR EMAIL"
+```
+
+Press **Enter** for all default prompts.
+
+### Add SSH key to the SSH agent:
+
+```bash
 eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/id_rsa
+```
+
+### Display the SSH key (copy this to GitHub):
+
+```bash
 cat ~/.ssh/id_rsa.pub
+```
 
-<!-- Copy over and paste the SSH key -->
+Add this key to **GitHub SSH Settings**:  
+👉 [GitHub SSH Key Settings](https://github.com/settings/keys)
+
+### Verify SSH connection:
+
+```bash
 ssh -T git@github.com
+```
 
-<!-- Clone the repository -->
+---
+
+## ✅ Step 4: Clone the Wordle-GRPO Repository
+
+```bash
 git clone git@github.com:RLDiary/Wordle-GRPO.git
 cd Wordle-GRPO
+```
 
-<!-- Install Rust compiler and UV -->
+---
+
+## ✅ Step 5: Install Rust and UV
+
+### Install the Rust compiler:
+
+```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-. "$HOME/.cargo/env"
+source $HOME/.cargo/env
+```
+
+### Install **UV** (a fast Python package manager):
+
+```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source $HOME/.local/bin/env
+```
 
-<!-- Initialise UV and install all packages; Note how flash-attn is installed here -->
+---
+
+## ✅ Step 6: Set Up Python Environment
+
+Create a **Python 3.12.7** virtual environment with **UV**:
+
+```bash
 uv venv --python 3.12.7 --seed
 source .venv/bin/activate
+```
+
+### Install dependencies (including **flash-attn**):
+
+```bash
 uv sync --no-install-package flash-attn
 uv sync
+```
 
-<!-- Initialise weights and biases and huggingface cli -->
+---
+
+## ✅ Step 7: Set Up Experiment Tracking and Model Access
+
+### Install and initialize **Weights & Biases (wandb)**:
+
+```bash
 wandb init
-huggingface-cli login
+```
 
-<!-- Download the SFT model from Huggingface -->
+You'll be prompted to log in to your **Weights & Biases** account. If you don't have one, create it here:  
+👉 [Weights & Biases](https://wandb.ai/)
+
+### Log in to **Hugging Face CLI**:
+
+```bash
+huggingface-cli login
+```
+
+Generate an **access token** from Hugging Face:  
+👉 [Get Access Token](https://huggingface.co/settings/tokens)
+
+---
+
+## ✅ Step 8: Download the SFT Model
+
+```bash
 cd ..
 mkdir Models
 cd Models
 mkdir Qwen2.5-7B-WORDLE-FineTune
 cd Qwen2.5-7B-WORDLE-FineTune
 huggingface-cli download vigneshR/Qwen2.5-7B-WORDLE-FineTune --local-dir .
-cd ..
-cd ..
-cd Wordle-GRPO
+cd ../../Wordle-GRPO
+```
 
-<!-- Create a new TMUX sessions -->
+---
+
+## ✅ Step 9: Run the Project in a TMUX Session
+
+### Create a new TMUX session:
+
+```bash
 tmux new-session -n 0
+```
 
-<!-- Activate venv and run the code -->
+### Activate the Python environment:
+
+```bash
 source .venv/bin/activate
+```
+
+### Launch the training or evaluation script:
+
+```bash
 accelerate launch --config-file config/zero3.yaml --num-processes 2 Wordle/wordle_run.py
+```
+
+---
+
+## ✅ Bonus Tips
+
+- **TMUX Usage:**
+  - Detach session: `Ctrl+B`, then `D`
+  - List sessions: `tmux ls`
+  - Reattach session: `tmux attach -t <session-name>`
+
+- **Deactivate virtual environment:**
+  ```bash
+  deactivate
+  ```
+
+- **Stop a running process:** `Ctrl+C`
+
+- **Check GPU usage:**
+  ```bash
+  nvtop
+  ```
+
+---
+
+## 🎉 You're All Set!
+
+If you encounter any issues:
+1. Confirm all dependencies are installed properly.
+2. Ensure your SSH keys and Hugging Face credentials are configured.
+3. Feel free to open an issue on the **GitHub repository**.
+
+---
