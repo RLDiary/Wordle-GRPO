@@ -10,11 +10,11 @@ The base model Qwen2.5-7B-Instruct is first supervised finetuned with 500 traces
 
 The model is then reinforcement tuned with GRPO - The best training run increases the performance of the supervised fine-tuned model by **3X** from 4.5% game solve rate to **14.5%** demonstrating a full 10% improvement after 35 steps - equal to about 6120 games (Each step involves 16 words (16 gradient accumulation steps) = 510 words, each 12 times = 6,120 games ). This roughly corresponds to 5 hours of training time with 3 x A100s = $25 of training compute at current prices (14 July 2025)
 
-The training does become unstable after this point, so further modifications to the code and hyperparameters were made to address this training instability. The final run still witnesses a **2X** game completion improvement over the SFT model, albeit being MUCH more stable.
+
 
 ![Best Training Run - Run 6](Images/Best%20Training%20Run%206%20-%20Final.png)
 
-One of the persistent issues we faced when getting Qwen-2.5-7B SFT model to learn to solve Wordle was that the model *VERY* often produced guesses that were neither 5 letters long, nor valid english words. So the training loop included a valid word reward. This chart shows the model consistently getting better in learning to only use valid words, while slowly, but constantly improving upon game completion rates.
+The training does become unstable after this point, so further modifications to the code and hyperparameters were made to address this training instability. The final run still witnesses a **2X** game completion improvement over the SFT model, albeit being MUCH more stable. One of the persistent issues we faced when getting Qwen-2.5-7B SFT model to learn to solve Wordle was that the model *VERY* often produced guesses that were neither 5 letters long, nor valid english words. So the training loop included a valid word reward. This chart shows the model consistently getting better in learning to only use valid words, while slowly, but constantly improving upon game completion rates.
 
 ![Valid Words Reward Trend](Images/Valid_Words_Wordle-GRPO.png)
 
