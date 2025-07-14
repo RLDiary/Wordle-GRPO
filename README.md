@@ -1,6 +1,6 @@
-# Wordle-GRPO - ([A $100 Agent](https://www.rldiary.com/p/the-100-agents))
+# Wordle-GRPO - [A $100 Agent](https://www.rldiary.com/p/the-100-agents)
 
-## **Experience the magic of Reinforcement Learning for $25.**
+## **Experience the magic of Reinforcement Learning for $100.**
 
 Wordle-GRPO is a reinforcement learning training loop built on top of **Transformers, TRL, and Accelerate**, specifically designed to train language models to play the game of **Wordle** using a variation of the **GRPO (Group Relative Policy Optimization)** algorithm. The training pipeline is built for **multi-turn environments** like Wordle, where models learn from rewards defined by a custom rubric and iteratively refine their response.
 
@@ -24,6 +24,9 @@ One of the persistent issues we faced with Qwen-2.5-7B SFT was the model *VERY* 
 
 ![Adaptive token length](Images/Adaptive-Token-Count-Exploration.png)
 
+## Sample Trajectory
+
+![Sample Trajectory](Images/SampleTrajectory.png)
 ## 🚀 Key Features
 - **Multi-Turn RL Training:** Handles sequences of interactions required to solve Wordle puzzles.
 - **GRPOTrainer:** Custom trainer that supports multi-turn trajectories with reward aggregation and policy optimization.
@@ -264,3 +267,60 @@ If you encounter any issues:
 3. Feel free to open an issue on the **GitHub repository**.
 
 ---
+
+# Example Trajectory
+
+[
+    {
+        "role": "user",
+        "content": "What is your first guess?"
+    },
+    {
+        "role": "assistant",
+        "content": "<think>We have no information yet, so we want an opening word that maximizes coverage of common consonants (s, t, l) and vowels (a, e). “slate” meets these criteria and is a standard strong opener.</think><answer>slate</answer>"
+    },
+    {
+        "role": "user",
+        "content": "Your Guess: slate\nFeedback: slate -> BGBBB\nPosition 1: s->B (The letter s is not in the word.)\nPosition 2: l->G (The letter l is in the word and in the correct position.)\nPosition 3: a->B (The letter a is not in the word.)\nPosition 4: t->B (The letter t is not in the word.)\nPosition 5: e->B (The letter e is not in the word.)\n"
+    },
+    {
+        "role": "assistant",
+        "content": "<think>Current constraints  \n• Pattern: _ l _ _ _  \n• Letters absent entirely: s, a, t, e  \nGoal for next guess: keep “l” fixed in position 2 and sample four new letters to learn quickly.\n\nCandidate analysis (must avoid s, a, t, e): blink, flunk, flurb … Among them “flunk” covers common consonants f, n, k plus another vowel u.</think><answer>flunk</answer>"
+    },
+    {
+        "role": "user",
+        "content": "Your Guess: flunk\nFeedback: flunk -> GGBBB\nPosition 1: f->G (The letter f is in the word and in the correct position.)\nPosition 2: l->G (The letter l is in the word and in the correct position.)\nPosition 3: u->B (The letter u is not in the word.)\nPosition 4: n->B (The letter n is not in the word.)\nPosition 5: k->B (The letter k is not in the word.)\n"
+    },
+    {
+        "role": "assistant",
+        "content": "<think>We now have two rounds of information.\n\nPattern fixed so far: f l _ _ _\n\nLetters definitely absent: a, k, n, s, t, u\n\nNeeded positions 3–5 must come from {b,c,d,g,h,i,j,m,o,p,q,r,v,w,x,y,z}.  \nOnly standard English words fitting “fl??” after excluding those letters are:\n\n• flank  \nOther apparent strings like “florn,” “flawn,” etc. are not valid Wordle words; others contain eliminated letters.\n\nTherefore there should be only one candidate remaining.</think><answer>flank</answer>"
+    },
+    {
+        "role": "user",
+        "content": "Your Guess: flank\nFeedback: flank -> GGBBB\nPosition 1: f->G (The letter f is in the word and in the correct position.)\nPosition 2: l->G (The letter l is in the word and in the correct position.)\nPosition 3: a->B (The letter a is not in the word.)\nPosition 4: n->B (The letter n is not in the word.)\nPosition 5: k->B (The letter k is not in the word.)\n"
+    },
+    {
+        "role": "assistant",
+        "content": "<think>Updated summary after three guesses  \nPattern fixed: f l _ _ _\n\nForbidden letters overall: a, k, n, s, t, u\n\nWe need valid English words of the form “fl??” that do not use any forbidden letters.  \nCandidates remaining:\n\n1. fling – valid Wordle word, fits all constraints.\nNo other common English words match once we exclude eliminated letters.</think><answer>fling</answer>"
+    },
+    {
+        "role": "user",
+        "content": "Your Guess: fling\nFeedback: fling -> GGBBB\nPosition 1: f->G (The letter f is in the word and in the correct position.)\nPosition 2: l->G (The letter l is in the word and in the correct position.)\nPosition 3: i->B (The letter i is not in the word.)\nPosition 4: n->B (The letter n is not in the word.)\nPosition 5: g->B (The letter g is not in the word.)\n"
+    },
+    {
+        "role": "assistant",
+        "content": "<think>We now have four definitive greens and a comprehensive list of absent letters:\n\nKnown pattern: f l _ _ _\nLetters absent entirely: a, g, i, k, n, s, t, u\n\nRemaining candidate words beginning with “fl” that satisfy all constraints are extremely limited; scanning ordinary English vocabulary produces essentially one valid option:\n\nflour – fits f l o u r where none of the eliminated letters appear.</think><answer>flour</answer>"
+    },
+    {
+        "role": "user",
+        "content": "Your Guess: flour\nFeedback: flour -> GGGBG\nPosition 1: f->G (The letter f is in the word and in the correct position.)\nPosition 2: l->G (The letter l is in the word and in the correct position.)\nPosition 3: o->G (The letter o is in the word and in the correct position.)\nPosition 4: u->B (The letter u is not in the word.)\nPosition 5: r->G (The letter r is in the word and in the correct position.)\n"
+    },
+    {
+        "role": "assistant",
+        "content": "<think>The pattern is fixed as f l o _ r:\n\nEliminated letters so far: a, g, i, k, n, s, t, u  \nPosition constraints yield the only viable completion word.</think><answer>floor</answer>"
+    },
+    {
+        "role": "user",
+        "content": "Success! You found the word floor in 6 turns."
+    }
+]
