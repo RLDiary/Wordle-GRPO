@@ -1,7 +1,7 @@
 # Wordle-GRPO - [A $100 Agent](https://www.rldiary.com/p/the-100-agents)
 
-Full Report - Coming Soon
-Video Tutorial - Coming Soon
+- Full Report - Coming Soon
+- Video Tutorial - Coming Soon
 
 ## **Experience the magic of Reinforcement Learning for $100.**
 
