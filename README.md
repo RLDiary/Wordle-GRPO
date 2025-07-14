@@ -1,6 +1,6 @@
 # Wordle-GRPO
 
-**Experience the magic of Reinforcement Learning with $25.**
+**Experience the magic of Reinforcement Learning for $25.**
 
 Wordle-GRPO is a reinforcement learning training loop built on top of **Transformers, TRL, and Accelerate**, specifically designed to train language models to play the game of **Wordle** using the **GRPO (Group Relative Policy Optimization)** algorithm. The training pipeline is built for **multi-turn environments** like Wordle, where models learn from rewards defined by a custom rubric and iteratively refine their response.
 
@@ -10,13 +10,19 @@ The base model Qwen2.5-7B-Instruct is first supervised finetuned with 500 traces
 
 The model is then reinforcement tuned with GRPO - The best training run increases the performance of the supervised fine-tuned model by **3X** from 4.5% game solve rate to **14.5%** demonstrating a full 10% improvement after 35 steps - equal to about 6120 games (Each step involves 16 words (16 gradient accumulation steps) = 510 words, each 12 times = 6,120 games ). This roughly corresponds to 5 hours of training time with 3 x A100s = $25 of training compute at current prices (14 July 2025)
 
-The training does become unstable after this point, so further modifications were done address this training instability. The final run still witnesses a **2X** game completion improvement over the SFT model, albeit being MUCH more stable.
+The training does become unstable after this point, so further modifications to the code and hyperparameters were made to address this training instability. The final run still witnesses a **2X** game completion improvement over the SFT model, albeit being MUCH more stable.
 
 ![Best Training Run - Run 6](Images/Best%20Training%20Run%206%20-%20Final.png)
 
-One of the persistent issues faced when getting Qwen-2.5 to learn to solve Wordle was the model often produced guesses that were neither 5 letters long, nor valid english words. So the training loop included a valid word reward. This chart shows the model consistently getting better in learning to only use valid words.
+One of the persistent issues we faced when getting Qwen-2.5-7B SFT model to learn to solve Wordle was that the model *VERY* often produced guesses that were neither 5 letters long, nor valid english words. So the training loop included a valid word reward. This chart shows the model consistently getting better in learning to only use valid words, while slowly, but constantly improving upon game completion rates.
 
 ![Valid Words Reward Trend](Images/Valid_Words_Wordle-GRPO.png)
+
+# Token Length Adaptation
+
+**STUNNINGLY**, the model learns to adapt token length to different reward signals. Two divergent runs shown here with the completions max length. The purple line shows model adaption to cumulative rewards (Each criteria is evaluated separately and rewards are added together - Final Reward =  R1 + R2 + R3) vs. the orange line shows progressive rewards (Reward 1 for critria 1 achievement, Reward 2 for criteria 1 & 2 achievement, Reward 3 for criteria 1, 2 & 3 achievement). The core insight here is that the model learns that over-thinking causes it to often get the valid word reward wrong. So it reduces token count and improves producing valid words (5 letter, valid english language words).
+
+![Adaptive token length](Images/Adaptive-Token-Count-Exploration.png)
 
 ### 🚀 Key Features
 - **Multi-Turn RL Training:** Handles sequences of interactions required to solve Wordle puzzles.
