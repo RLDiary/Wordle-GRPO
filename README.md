@@ -1,6 +1,24 @@
 # Wordle-GRPO
 
-This guide provides step-by-step instructions to set up **Wordle-GRPO** on a **new Ubuntu 22.04 Virtual Machine** with **PyTorch 1.12.8**.
+Wordle-GRPO is a reinforcement learning training loop built on top of **Transformers, TRL, and Accelerate**, specifically designed to train language models to play the game of **Wordle** using the **GRPO (Generative Relative Policy Optimization)** algorithm. The training pipeline is built for **multi-turn environments** like Wordle, where models learn from rewards defined by a custom rubric and iteratively refine their response.
+
+### 🚀 Key Features
+- **Multi-Turn RL Training:** Handles sequences of interactions required to solve Wordle puzzles.
+- **GRPOTrainer:** Custom trainer that supports multi-turn trajectories with reward aggregation and policy optimization.
+- **vLLM Integration:** Efficient inference during training for large language models with controlled memory usage - uses trl's colocate.
+- **Deepspeed Zero Stage 3:** Memory optimization and offloading to CPUs, enabling training on larger models across multiple GPUs.
+- **Custom Rewards:** A bespoke **WordleRubric** defines rewards that guide the model to better word guesses.
+- **Supervisor Mode:** When all attempts fail, a supervisor agent (assisted completion) can be used to solve the task, aiding robustness.
+
+### ⚙️ How It Works
+- The main script `wordle_run.py` initializes the model, tokenizer, and Wordle environment.
+- The environment generates datasets for training and evaluation, broadcasted across distributed processes.
+- The **GRPOMultiTurnTrainer** runs the training loop, handling:
+  - Reward computation based on word guesses.
+  - Advantage calculation and clipping.
+  - Logging via **Weights & Biases (wandb)**.
+  - Supervised intervention if all agents fail to solve a puzzle.
+- Training is accelerated via **DeepSpeed**, configured with gradient accumulation, optimizer offloading, and BF16 precision.
 
 ---
 
