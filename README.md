@@ -1,5 +1,8 @@
 # Wordle-GRPO - [A $100 Agent](https://www.rldiary.com/p/the-100-agents)
 
+Full Report - Coming Soon
+Video Tutorial - Coming Soon
+
 ## **Experience the magic of Reinforcement Learning for $100.**
 
 Wordle-GRPO is a reinforcement learning training loop built on top of **Transformers, TRL, and Accelerate**, specifically designed to train language models to play the game of **Wordle** using a variation of the **GRPO (Group Relative Policy Optimization)** algorithm. The training pipeline is built for **multi-turn environments** like Wordle, where models learn from rewards defined by a custom rubric and iteratively refine their response.
@@ -56,7 +59,7 @@ One of the persistent issues we faced with Qwen-2.5-7B SFT was the model *VERY* 
 ## 📌 Prerequisites
 
 - Ubuntu 22.04 Virtual Machine (VM). Runpod offers excellent value.
-👉👉 Sign up through my referral link so we can both get a random credit bonus [here](https://runpod.io?ref=y7igab3g)
+- 👉👉 Sign up through my referral link so we can both get a random credit bonus [here](https://runpod.io?ref=y7igab3g)
 - Pytorch 2.8, Cuda 12.8.1
 - Basic familiarity with Linux terminal commands.
 - A **GitHub account** to clone the repository and download models.
