@@ -35,7 +35,7 @@ def main(model_name: str, train_games: int, eval_games: int):
     print('Now waiting for everyone to finish...')
     accelerator.wait_for_everyone()
 
-    with_assist = False
+    with_assist = True
 
     # Initialize Training Arguments
     training_args = W.grpo_defaults(run_name=run_name)
