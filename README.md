@@ -2,6 +2,18 @@
 
 Wordle-GRPO is a reinforcement learning training loop built on top of **Transformers, TRL, and Accelerate**, specifically designed to train language models to play the game of **Wordle** using the **GRPO (Generative Relative Policy Optimization)** algorithm. The training pipeline is built for **multi-turn environments** like Wordle, where models learn from rewards defined by a custom rubric and iteratively refine their response.
 
+### 🚀 Results from RL Loop
+
+The best training run increases the performance of the supervised fine-tuned model by **3X** from 4.5% game solve rate to **14.5%** demonstrating a full 10% improvement after 35 steps - Roughly equal to about 6000 games (Each step involves 16 words (16 gradient accumulation steps) = 510 words, each 12 times = 6,120 games ). This roughly corresponds to about 5 hours of training time with 3 x A100s = $25 of training compute at current prices (14 July 2025)
+
+The training does become unstable after this point, so further modifications were done address this training instability. The final run still witnesses a **2X** game completion improvement over the SFT model, albeit being MUCH more stable.
+
+![Best Training Run - Run 6](Images/Best%20Training%20Run%206%20-%20Final.png)
+
+One of the persistent issues faced when getting Qwen-2.5 to learn to solve Wordle was the model often produced guesses that were neither 5 letters long, nor valid english words. So the training loop included a valid word reward. This chart shows the model consistently getting better in learning to only use valid words.
+
+![Valid Words Reward Trend](Images/Valid_Words_Wordle-GRPO.png)
+
 ### 🚀 Key Features
 - **Multi-Turn RL Training:** Handles sequences of interactions required to solve Wordle puzzles.
 - **GRPOTrainer:** Custom trainer that supports multi-turn trajectories with reward aggregation and policy optimization.
@@ -25,17 +37,6 @@ Wordle-GRPO is a reinforcement learning training loop built on top of **Transfor
 - **Format Reward:** 0.05 Given for correct <think>, </think> and <answer>, </answer> tags in the response
 - **Valid Word Reward:** 0.2 Given for correct formatting AND using valid words only on all guesses in a game
 - **Game Completion Reward:** 1.0 Given for correct formatting AND using valid words only AND solving the game within 6 turns
-
-### 🚀 Results from RL Loop
-
-The best training run 3X the performance of the supervised fine-tuned model from 4.5% accuracy to 14.5% demonstrating a full 10% improvement after 35 steps. Each batch has 16 words (16 gradient accumulation steps), so a total of about 500 games are played num_generations times, which is equal to 12. So a total fo 6,000 games are played before the model hits this peak performance. The training does become unstable after this point, so further modifications address this training instability. The final run still witnesses 
-This roughly corresponds to about 5 hours of training time with 3 x A100s = $25 of training compute at current prices (14 July 2025)
-
-![Best Training Run - Run 6](Images/Best%20Training%20Run%206%20-%20Final.png)
-
-One of the persistent issues faced when getting Qwen-2.5 to learn to solve Wordle was the model often produced guesses that were neither 5 letters long, nor valid english words. So the training loop included a valid word reward. This chart shows the model consistently getting better in learning to only use valid words.
-
-![Valid Words Reward Trend](Images/Valid_Words_Wordle-GRPO.png)
 
 ---
 
